@@ -30,6 +30,21 @@ No game assets are distributed; supply your own ROM (US release, SHA1
   granularity).
 - 25 functions contain cop0/cache/eret/tlb opcodes (tools scan) — stubbed for
   the first recompile exactly as WT's bring-up did, to be RENAMEd as identified.
+- **PARKED REGION rom 0x88000-0xB0000 (~160 KB, vram ~0x80087400-0x800AF400)**:
+  declared data for the bootstrap. It passes instruction-level validity checks
+  but is full of conditional branches spanning tens of KB across spimdisasm's
+  function splits — N64Recomp's one-entry function model can't express it
+  piecemeal. Hypothesis: AKI's hand-written match-engine core with multiple
+  entry points and free cross-branching (jal targets from outside force splits
+  mid-flow). If correct, the game may boot to menus without it but will crash
+  entering a match. Conquering it (likely: treat as one unit / find the real
+  entry set / N64Recomp single-function-with-alt-entries modeling) is the next
+  major analysis project after boot bring-up.
+- Idle-thread spin located at 0x80000560-0x80000568 in func_800004B8
+  (`jal func_8001C580; j back` — WT's exact cooperative-scheduler deadlock
+  pattern). Queued: `[[patches.instruction]]` in revenge.toml rewriting the j at
+  0x80000568 to 0x1000FFFF (`b .`) so N64Recomp emits pause_self, mirroring
+  wcw.toml's documented fix.
 
 ## Layout
 

@@ -35,11 +35,11 @@ options:
   data_string_guesser_level: 2
 
 # Layout (tools/recon.py, 2026-07-07): unlike World Tour, Revenge has NO overlay
-# system — one contiguous main segment, rom 0x1000 <-> vram 0x80000400 (same
+# system ? one contiguous main segment, rom 0x1000 <-> vram 0x80000400 (same
 # entrypoint as WT), code to ~0xD8000 with data pockets at the jr-density gaps,
 # libultra at the top (0x800D2xxx+). IPL3 loads the standard 1 MB, so the loaded
 # segment runs to rom 0x101000; everything after is on-demand assets.
-# Code/data boundaries below are 16KB-coarse from the density scan — refine as
+# Code/data boundaries below are 16KB-coarse from the density scan ? refine as
 # splat output demands.
 segments:
   - name: header
@@ -80,50 +80,36 @@ segments:
       - [0x36B00, asm]
       - [0x36D00, data]
       - [0x3C700, asm]
-      - [0x72200, data]
-      - [0x77F00, asm]
-      - [0x78100, data]
-      - [0x7F100, asm]
-      - [0x7F300, data]
-      - [0x7FF00, asm]
-      - [0x80100, data]
-      - [0x82A00, asm]
-      - [0x91800, data]
-      - [0x91A00, asm]
-      - [0xCB400, data]
-      - [0xCBC00, asm]
-      - [0xCBF00, data]
-      - [0xCC100, asm]
-      - [0xCD600, data]
-      - [0xCD800, asm]
-      - [0xCE100, data]
-      - [0xCE200, asm]
-      - [0xCE500, data]
-      - [0xCE700, asm]
-      - [0xCE900, data]
-      - [0xCEC00, asm]
-      - [0xCF200, data]
-      - [0xCF400, asm]
-      - [0xCF900, data]
-      - [0xCFB00, asm]
-      - [0xD0500, data]
-      - [0xD0800, asm]
-      - [0xD2400, data]
-      - [0xD2500, asm]
-      - [0xD2900, data]
-      - [0xD2A00, asm]
-      - [0xD2B00, data]
-      - [0xD2C00, asm]
-      - [0xD3200, data]
-      - [0xD3500, asm]
-      - [0xD5F00, data]
-      - [0xD6500, asm]
-      - [0xD6700, data]
-      - [0xD7A00, asm]
-      - [0xD8000, data]
+
+  # Two CPU overlays, BOTH loaded at vram 0x80090000 - World Tour's exact
+  # architecture (swap-at-same-address), just stored right after the fixed image
+  # instead of at the end of ROM. 9-word descriptors at rom 0x37A30/0x37A54
+  # (vram D_80036E30/D_80036E54): romStart, romEnd, entry, text/data/bss bounds.
+  # Section sizes verified byte-exact against romEnd-romStart.
+  - name: ovl_a
+    type: code
+    start: 0x3C770
+    vram: 0x80090000
+    exclusive_ram_id: ovl_90000
+    bss_size: 0x13620
+    subsegments:
+      - [0x3C770, asm]
+      - [0x72240, data]
+      - { type: bss, vram: 0x800D6D30 }
+
+  - name: ovl_b
+    type: code
+    start: 0x834A0
+    vram: 0x80090000
+    exclusive_ram_id: ovl_90000
+    bss_size: 0x137F0
+    subsegments:
+      - [0x834A0, asm]
+      - [0xD5FB0, data]
+      - { type: bss, vram: 0x800E77B0 }
 
   - name: assets
     type: bin
-    start: 0x101000
+    start: 0xDAC50
 
   - [0x1000000]

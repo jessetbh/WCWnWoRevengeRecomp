@@ -6,12 +6,17 @@ import re, struct, os
 os.chdir(r"C:\Users\selki\depot\WcwRevengeRecomp")
 rev = open("revenge.z64", "rb").read()
 funcs = []
+sec_rom = sec_vram = 0
 for line in open("syms/dump.toml"):
+    ms = re.match(r'rom = (0x[0-9A-Fa-f]+)', line)
+    if ms: sec_rom = int(ms.group(1), 16)
+    ms = re.match(r'vram = (0x[0-9A-Fa-f]+)', line)
+    if ms: sec_vram = int(ms.group(1), 16)
     m = re.search(r'\{ name = "([^"]+)", vram = (0x[0-9A-Fa-f]+), size = (0x[0-9A-Fa-f]+)', line)
-    if m: funcs.append((m.group(1), int(m.group(2), 16), int(m.group(3), 16)))
+    if m: funcs.append((m.group(1), int(m.group(2), 16), int(m.group(3), 16), sec_rom, sec_vram))
 special = []
-for name, vram, size in funcs:
-    rom = vram - 0x80000400 + 0x1000
+for name, vram, size, sec_rom, sec_vram in funcs:
+    rom = sec_rom + (vram - sec_vram)
     for off in range(rom, rom + size - 3, 4):
         w = struct.unpack_from(">I", rev, off)[0]
         if (w >> 26) in (0x10, 0x2F):
