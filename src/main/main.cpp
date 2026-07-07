@@ -318,17 +318,60 @@ size_t get_frames_remaining() {
 }
 
 // ---------------- RSP ucode (audio) ----------------
-// The audio ucode (located at runtime: ucode=0x80029C50, ucode_data=0x80037530 — see
-// rsp/README.md) is recompiled by RSPRecomp (rsp/wcw_audio.toml -> rsp/wcw_audio.cpp);
-// it is byte-identical to BMHero's stock aspMain. Never return nullptr here: that makes
-// recomp::rsp::run_task return false, which task_thread_func (events.cpp) treats as FATAL
-// (ULTRAMODERN_QUICK_EXIT). For unexpected task types, hand back a no-op ucode that
-// reports a clean RSP break so the task "completes" and the game keeps running.
+// The audio ucode (located at runtime via the OSTask log: ucode=0x8002BD10 ->
+// ROM 0x2C910, ucode_data=0x8003A5C0 -> ROM 0x3B1C0) is recompiled by RSPRecomp
+// (rsp/revenge_audio.toml -> rsp/revenge_audio.cpp). It is NOT WT's aspMain (newer
+// revision, text 0xC54); its jump table was extracted from the ucode's own data
+// section. Never return nullptr here: that makes recomp::rsp::run_task return false,
+// which task_thread_func (events.cpp) treats as FATAL (ULTRAMODERN_QUICK_EXIT). For
+// unexpected task types, hand back a no-op ucode that reports a clean RSP break so
+// the task "completes" and the game keeps running.
 static RspExitReason wcw_null_ucode(uint8_t* rdram, uint32_t ucode_addr) {
     (void)rdram; (void)ucode_addr;
     return RspExitReason::Broke; // pretend the task finished so the runtime continues
 }
 
+extern RspUcodeFunc revenge_audio_ucode;
+
+// Diagnostic wrapper (env WCW_AUDIO_LOG=1): dump the first audio command lists so the
+// acmd opcodes/arguments can be compared against the aspMain ABI (silent-audio debug).
+static uint32_t dbg_acmd_ptr, dbg_acmd_size;
+static RspExitReason revenge_audio_traced(uint8_t* rdram, uint32_t ucode_addr) {
+    static int n = 0;
+    if (n++ < 2 && dbg_acmd_ptr >= 0x80000000) {
+        uint32_t off = dbg_acmd_ptr - 0x80000000;
+        fprintf(stderr, "[rsp][acmd] list @0x%08X size=0x%X:\n", dbg_acmd_ptr, dbg_acmd_size);
+        for (uint32_t i = 0; i < dbg_acmd_size && i < 0x140; i += 8) {
+            uint32_t w0 = *(uint32_t*)(rdram + off + i);
+            uint32_t w1 = *(uint32_t*)(rdram + off + i + 4);
+            fprintf(stderr, "  %02X %06X %08X\n", w0 >> 24, w0 & 0xFFFFFF, w1);
+        }
+    }
+    // Opcode histogram across ALL audio tasks (printed every ~256 tasks ≈ 6s):
+    // discriminates "voice opcodes never submitted" (game-side silence) from
+    // "voice opcodes mis-executed" (ucode bug).
+    static uint32_t histo[16] = {};
+    if (dbg_acmd_ptr >= 0x80000000) {
+        uint32_t off = dbg_acmd_ptr - 0x80000000;
+        for (uint32_t i = 0; i < dbg_acmd_size; i += 8) {
+            histo[(*(uint32_t*)(rdram + off + i)) >> 28 == 0 ? ((*(uint32_t*)(rdram + off + i)) >> 24) & 0xF : 15]++;
+        }
+    }
+    if ((n & 0xFF) == 0) {
+        fprintf(stderr, "[rsp][acmd-histo] ");
+        for (int i = 0; i < 16; i++) if (histo[i]) fprintf(stderr, "%02X:%u ", i, histo[i]);
+        // Probe the mixer's LOADBUFF source DRAM buffers: nonzero = a CPU-side synth
+        // (or earlier RSP pass) is producing input; all-zero = the voice path is dead.
+        auto probe = [&](uint32_t addr) {
+            uint32_t s = 0;
+            for (int k = 0; k < 64; k += 4) s |= *(uint32_t*)(rdram + (addr - 0x80000000) + k);
+            return s;
+        };
+        fprintf(stderr, "| in104DB0=%08X in105850=%08X in106610=%08X\n",
+            probe(0x80104DB0), probe(0x80105850), probe(0x80106610));
+    }
+    return revenge_audio_ucode(rdram, ucode_addr);
+}
 
 RspUcodeFunc* get_rsp_microcode(const OSTask* task) {
     static int n = 0;
@@ -338,12 +381,22 @@ RspUcodeFunc* get_rsp_microcode(const OSTask* task) {
             (unsigned)task->t.ucode_size);
     }
     // Only non-gfx tasks reach here — gfx tasks go through the renderer path.
-    // BOOTSTRAP: Revenge's audio ucode is not yet located/recompiled (it is NOT
-    // byte-identical to WT's aspMain). Run the no-op ucode for audio tasks too —
-    // silent audio, but the game keeps running, and the OSTask log above prints the
-    // real ucode address to feed rsp/revenge_audio.toml (WT rsp/README.md method).
     if (task->t.type == M_AUDTASK) {
-        return &wcw_null_ucode;
+        // Diagnostic (env WCW_AUDIO_LOG=1, first 8 tasks): acmd list location/size —
+        // discriminates "game submits empty lists" from "ucode output wrong".
+        static const bool audio_log = getenv("WCW_AUDIO_LOG") != nullptr;
+        static int an = 0;
+        if (audio_log && an++ < 8) {
+            fprintf(stderr, "[rsp][aud] data_ptr=0x%08X data_size=0x%X yield_data_ptr=0x%08X output_buff=0x%08X\n",
+                (unsigned)task->t.data_ptr, (unsigned)task->t.data_size,
+                (unsigned)task->t.yield_data_ptr, (unsigned)task->t.output_buff);
+        }
+        if (audio_log) {
+            dbg_acmd_ptr = (uint32_t)task->t.data_ptr;
+            dbg_acmd_size = (uint32_t)task->t.data_size;
+            return &revenge_audio_traced;
+        }
+        return &revenge_audio_ucode;
     }
     fprintf(stderr, "[rsp] unknown task type=%u — running no-op ucode\n", (unsigned)task->t.type);
     return &wcw_null_ucode;

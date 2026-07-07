@@ -57,12 +57,15 @@ forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
 
 ## Next steps (post-boot)
 
-1. **Audio**: RSPRecomp the audio ucode (vram 0x8002BD10 / data 0x8003A5C0 /
-   size 0x1000 from the OSTask log; rom ≈ 0x2C910). WT's wcw_audio.toml as
-   template; wire into get_rsp_microcode.
-2. **Verify visuals/input in-game** (frames render — a tiled sprite pattern +
-   object on the first screens; confirm title screen, menus, attract; keyboard/
-   pad input path via osContStartReadData shim is named and should work).
+1. **Audio voice path** (ucode DONE 2026-07-07 — recompiled from ROM 0x2C910,
+   executing ~43 tasks/s; see rsp/README.md): output is still silent because
+   the game-side voice renderer never feeds the RSP mixer (voice opcodes never
+   submitted; mixer input DRAM buffers permanently zero). Three concrete leads
+   logged in rsp/README.md (audio thread 0x80016EDC loop, double event-5
+   registration, rom_read streaming cap).
+2. **Verify visuals/input in-game** (attract intro cinematic renders correctly
+   — WCW Monday Nitro stage, screenshot-verified; confirm title/menus and the
+   keyboard/pad input path via the osContStartReadData shim).
 3. Verify SaveType (Revenge may use cart SRAM rather than Controller Pak — check
    the game's save driver against WT's raw-SI pattern).
 4. Review remaining revenge.toml stubs + syms/bootstrap_stubs.log (which are

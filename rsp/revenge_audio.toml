@@ -1,0 +1,36 @@
+# RSPRecomp config for Revenge's AUDIO microcode. Values from the OSTask logged at
+# runtime by get_rsp_microcode (boot13, 2026-07-07):
+#   task type=2 ucode=0x8002BD10 ucode_data=0x8003A5C0 ucode_size=0x1000
+# Fixed segment vram 0x80000400 = rom 0x1000, so ucode text vram 0x8002BD10 -> ROM
+# 0x2C910; ucode data vram 0x8003A5C0 -> ROM 0x3B1C0.
+#
+# The OSTask's ucode_size 0x1000 is the rounded-up DMA size (WT's lesson). The real
+# text is bounded by the F3DEX2 graphics ucode text that follows it: RT64's GBI
+# matcher reported gfx text at RDRAM phys 0x2C970 = vram 0x8002C970 = ROM 0x2D570,
+# giving an audio text window of 0xC60; the last nonzero byte is at 0xC54.
+#
+# NOTE: this ucode is NOT WT's aspMain (diverges at byte 0, 0xC54 vs 0xE20) — a newer
+# audio microcode revision. Do not reuse WT/BMHero jump-table lists.
+# text_address 0x04001080 = where rspboot places task ucode in IMEM (same as WT).
+# Run from repo root:  .\RSPRecomp.exe rsp\revenge_audio.toml  (paths relative to rsp/).
+text_offset = 0x2C910
+text_size = 0xC54
+text_address = 0x04001080
+rom_file_path = "../revenge.z64"
+output_file_path = "revenge_audio.cpp"
+output_function_name = "revenge_audio_ucode"
+
+# Indirect (jump-table) branch targets: extracted from THIS ucode's own data section —
+# the ABI command dispatch table is the first 16 halfwords at ROM 0x3B1C0:
+#   10EC 139C 119C 1A64 11C8 17EC 1208 0000 0000 127C 1348 1248 1C84 12D4 02B0 1384
+# The two 0000s are null commands. Entry 14 is stored as 0x02B0: the RSP PC is 12-bit
+# (jr masks to IMEM offset), so on hardware 0x02B0 and 0x12B0 are the same PC — listed
+# here as 0x12B0 (the recompiler's 0x1000-based label; RSPRecomp's generated dispatch
+# switch normalizes with `(jump_target | 0x1000) & 0x1FFF`, so the raw 0x02B0 matches).
+# First recompile omitted it and the boot died UnhandledJumpTarget 0x02B0 (= audio
+# opcode 14) — if a future boot dies the same way, the missing case goes in this list
+# as (raw_value | 0x1000).
+extra_indirect_branch_targets = [
+	0x10EC, 0x139C, 0x119C, 0x1A64, 0x11C8, 0x17EC, 0x1208,
+	0x127C, 0x1348, 0x1248, 0x1C84, 0x12D4, 0x12B0, 0x1384
+]

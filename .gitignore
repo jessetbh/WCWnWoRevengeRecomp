@@ -89,3 +89,4 @@ recomp-out.txt
 boot*.log
 boot*.err.log
 boot-screenshot.png
+shot-*.png

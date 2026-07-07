@@ -39,9 +39,14 @@ The loop tooling, if more identifications are needed:
    ext = undelivered-message backlog; ext growing with del/s=0 means a game
    thread is spinning without yielding).
 
-**Next phase: audio.** OSTask log gives ucode vram 0x8002BD10 / data
-0x8003A5C0 / size 0x1000 (type=2 tasks fire continuously). RSPRecomp per WT's
-wcw_audio.toml. Then: input verify, SaveType verify, stubs review.
+**Audio phase (2026-07-07): ucode recompiled and executing; output silent.**
+`rsp/revenge_audio.toml` → `rsp/revenge_audio.cpp`, wired for M_AUDTASK.
+NOT WT's aspMain — newer ucode, own dispatch table (see rsp/README.md for the
+12-bit-PC jump-table gotcha). Silence root-caused to the game-side voice
+renderer never producing input for the RSP mixer (evidence + 3 leads in
+rsp/README.md). Diagnostics: `WCW_AUDIO_LOG=1` enables the acmd dump/opcode
+histogram/DRAM-input probes in src/main/main.cpp and the [audio] peak line.
+Then: input verify, SaveType verify, stubs review.
 
 ## Hard-won facts (do not re-derive)
 
