@@ -55,6 +55,23 @@ for it in range(1, 41):
     if fail not in funcs:
         print(f"=== failing fn {fail} not in dump.toml ==="); sys.exit(1)
     fvram, fsize = funcs[fail]
+
+    # Failure class 2: conditional branches escaping the function (handwritten OS asm
+    # that spimdisasm split mid-flow — WT precedent: stub it, the runtime provides
+    # these services). Applies when the message mentions branching outside.
+    if "branching outside of the function" in out or "Unhandled branch" in out:
+        cands = open("syms/stub_candidates.txt").read()
+        if f'"{fail}"' not in cands:
+            with open("syms/stub_candidates.txt", "a") as f:
+                f.write(f'    "{fail}",\n')
+            stubs = open("syms/stub_candidates.txt").read()
+            toml = open("revenge.toml").read()
+            toml = re.sub(r"stubs = \[\n.*?\]", "stubs = [\n" + stubs + "]", toml, flags=re.S)
+            open("revenge.toml", "w", newline="\n").write(toml)
+            print(f"iter {it}: STUBBED {fail} (cross-function branches, OS asm)")
+            continue
+        print(f"=== {fail} already stubbed yet still failing ==="); print(out[-1200:]); sys.exit(1)
+
     ext_targets = [t for t in find_j_targets(fail) if not (fvram <= t < fvram + fsize)]
     if not ext_targets:
         print(f"=== {fail}: no external j-targets; different failure class ===")

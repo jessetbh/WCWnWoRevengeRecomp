@@ -9,8 +9,13 @@ rev = open(r"C:\Users\selki\depot\WcwRevengeRecomp\revenge.z64", "rb").read()
 START, END = 0x1050, 0xD8000
 WIN = 0x100
 
+BRANCH_OPS = {0x01, 0x04, 0x05, 0x06, 0x07, 0x14, 0x15, 0x16, 0x17}
+
 def win_score(off):
-    """Fraction of words that decode as valid, plausible MIPS."""
+    """Fraction of words that decode as valid, plausible MIPS. Data that decodes as
+    instructions is caught by target sanity: j/jal must land in the loaded segment,
+    branches must stay local (real IDO branches are short; float/vertex data words
+    produce wild displacements)."""
     bad = 0
     n = WIN // 4
     for i in range(n):
@@ -20,9 +25,22 @@ def win_score(off):
         insn = rabbitizer.Instruction(w)
         if not insn.isValid():
             bad += 1
-        elif insn.isJumptableJump() or insn.isBranch() or insn.isJumpWithAddress():
-            # branches/jumps with insane targets are data
-            pass
+            continue
+        op = w >> 26
+        if op in (2, 3):  # j/jal
+            target = ((w & 0x03FFFFFF) << 2) | 0x80000000
+            if not (0x80000400 <= target < 0x800D8000):
+                bad += 1
+        elif op in BRANCH_OPS or (op == 1):  # branches: displacement must be local
+            disp = w & 0xFFFF
+            if disp >= 0x8000:
+                disp -= 0x10000
+            if abs(disp) > 0x2000:            # +/-32KB instr = 8K words; IDO stays far under
+                bad += 1
+        elif op == 0x11:                      # COP1: rs field must be a real fmt/branch
+            rs = (w >> 21) & 0x1F
+            if rs not in (0, 2, 4, 6, 8, 0x10, 0x11, 0x14, 0x15):
+                bad += 1
     return 1.0 - bad / n
 
 wins = []
@@ -38,7 +56,7 @@ run_start = START
 pending = []
 kinds = []
 for off, sc in wins:
-    kinds.append((off, sc >= 0.90))
+    kinds.append((off, sc >= 0.95))
 
 # smooth: single-window flips get absorbed
 sm = []

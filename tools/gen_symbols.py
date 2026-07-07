@@ -21,6 +21,13 @@ RENAME = {
     "main": "game_main",
 }
 
+# Functions suppressed as symbols (continuation fragments merged into an earlier
+# function by tools/recomp-loop3.py's backward-merge treatment).
+SKIP = set()
+_skip_file = Path(__file__).resolve().parent.parent / "syms" / "skip_functions.txt"
+if _skip_file.exists():
+    SKIP = {l.strip() for l in open(_skip_file) if l.strip()}
+
 FUNC_RE = re.compile(r"^nonmatching (\S+), (0x[0-9A-Fa-f]+)")
 GLABEL_RE = re.compile(r"^glabel (\S+)")
 INSN_RE = re.compile(r"^\s*/\* ([0-9A-Fa-f]+) ([0-9A-Fa-f]{8}) ([0-9A-Fa-f]{8}) \*/")
@@ -76,6 +83,8 @@ def main():
             f.write(f"rom = 0x{rom:08X}\nvram = 0x{vram:08X}\nsize = 0x{size:X}\n\n")
             f.write("functions = [\n")
             for fn, fv, fs in funcs:
+                if fn in SKIP:
+                    continue
                 fn = RENAME.get(fn, fn)
                 f.write(f"    {{ name = \"{fn}\", vram = 0x{fv:08X}, size = 0x{fs:X} }},\n")
                 total += 1
