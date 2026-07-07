@@ -5,7 +5,14 @@ sister project to [WCW vs. nWo World Tour: Recompiled](https://github.com/jesset
 reusing its runtime stack (the jessetbh forks with the `[wcw fix]` set), tooling,
 and hard-won knowledge. Same AKI engine family, one year newer.
 
-**Status: bootstrap (2026-07-07).** Disassembly + first recompile in progress.
+**Status: bootstrap (2026-07-07) — builds and executes.** Clean recompile
+(1,684 functions), full port links (`build-msvc/RevengeRecompiled.exe`), runtime
+stack initializes (window/D3D12/RT64), boot DMA loads the game image, and
+recompiled game code executes before crashing in the recompiled `osInitialize`
+— the expected zero-RENAMEs first-boot crash. First identification banked from
+the symbolized backtrace: **func_800268A0 = osInitialize** (game_main's first
+call, WT's exact evidence pattern). Next: RENAME it in tools/gen_symbols.py,
+rebuild, iterate the boot — World Tour's documented Phase-3 bring-up loop.
 No game assets are distributed; supply your own ROM (US release, SHA1
 `E1711A2511394B9357B5F1AC8CA5CC17BD674836`, big-endian, entrypoint `0x80000400`).
 

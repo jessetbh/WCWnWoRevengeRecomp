@@ -1,0 +1,50 @@
+﻿SDL Video Driver: windows
+Device Name: NVIDIA GeForce RTX 4070 SUPER
+Device Vendor: 0x10DE
+Driver Version: 0x200000000f25b1
+Initializing recomp heap at offset 0x01000000 with size 0x1F000000
+[wcw] main start
+[wcw] priming DXGI + D3D12 on main thread...
+[wcw]   prime adapter 0 D3D12CreateDevice(Device8) ok=1
+[wcw] priming done
+[wcw] calling recomp::start...
+[wcw] create_window
+[wcw] create_render_context (RT64)...
+[rt64setup] interpreter/state ok; creating window
+[rt64setup] appWindow setup ok; detecting refresh rate
+[rt64setup] refresh rate ok
+[rt64setup] resolved API = 0
+[plumed3d12] ctor start
+[plumed3d12] calling CreateDXGIFactory1 (workaround)
+[plumed3d12] CreateDXGIFactory1 res=0x0 factory=000001EEFA3DBE50
+[plumed3d12] ctor done, 4 adapters
+[rt64setup] render interface created = 000001EEFA3E2710; creating device
+[d3d12dev] ctor start; enumerating adapters
+[d3d12dev] adapter 0: 'NVIDIA GeForce RTX 4070 SUPER' flags=0x0
+[d3d12dev]   D3D12CreateDevice(Device8) res=0x0 dev=000001EEFA32DA10
+[d3d12dev] adapter 1: 'AMD Radeon(TM) Graphics' flags=0x0
+[d3d12dev]   D3D12CreateDevice(Device8) res=0x0 dev=000001EEFA6E7100
+[d3d12dev] adapter 2: 'NVIDIA GeForce RTX 4070 SUPER' flags=0x0
+[d3d12dev]   D3D12CreateDevice(Device8) res=0x0 dev=000001EEFAA77800
+[d3d12dev] adapter 3: 'NVIDIA GeForce RTX 4070 SUPER' flags=0x0
+[d3d12dev]   D3D12CreateDevice(Device8) res=0x0 dev=000001EEFA9AC1A0
+[d3d12dev] adapter 4: 'Microsoft Basic Render Driver' flags=0x2
+[rt64setup] createDevice -> 000001EEFA6052A0
+[wcw][msaa] requested sampleCount=2 (forcing 1; see resolve workaround)
+[wcw] create_render_context done (ctx=000001EEF1E23560)
+[wcw][vi] update_vi: next_state->mode is NULL (cur_state=0 field=0 game_started=1) - skipping
+[wcw][rom_read#0] rdram=000001EEFE550000 dest=000001EEFE550400 ram=0xFFFFFFFF80000400 phys=0x10001000 off=0x1000 nbytes=0x100000 rom.size=0x1000000 rom_base=0x10000000
+
+==== [wcw] unhandled exception 0xC0000005 at 00007FF71C90414A ====
+[wcw]   access READ address 0x1EF22D50018
+  # 0  RevengeRecompiled.exe  +0x8414A  (0x7FF71C90414A)
+  # 1  RevengeRecompiled.exe  +0x807A2  (0x7FF71C9007A2)
+  # 2  RevengeRecompiled.exe  +0x80232  (0x7FF71C900232)
+  # 3  RevengeRecompiled.exe  +0xB54C  (0x7FF71C88B54C)
+  # 4  RevengeRecompiled.exe  +0x249BF1  (0x7FF71CAC9BF1)
+  # 5  RevengeRecompiled.exe  +0x24FFBB  (0x7FF71CACFFBB)
+  # 6  ucrtbase.dll          wcsrchr+0x150  (0x7FF86DA3CD30)
+  # 7  KERNEL32.DLL          BaseThreadInitThunk+0x17  (0x7FF86EA0E957)
+  # 8  ntdll.dll             RtlUserThreadStart+0x2C  (0x7FF870487C1C)
+==== [wcw] end backtrace ====
+

@@ -53,6 +53,8 @@ stubs = [
     "func_8009C148",
     "func_8009C774",
     "func_800D746C",
+    "func_800286F0",
+    "func_8002BBCC",
 ]
 
 ignored = [
