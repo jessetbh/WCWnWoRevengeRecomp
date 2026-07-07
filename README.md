@@ -18,40 +18,31 @@ No game assets are distributed; supply your own ROM (US release, SHA1
 
 ## What's known so far (see tools/*.py for the evidence)
 
-- **Same entrypoint as World Tour (0x80000400)**, same IDO compiler, same
-  rom↔vram mapping for the main segment (rom 0x1000 ↔ vram 0x80000400).
-- **NO overlay system** — the single biggest structural simplification vs World
-  Tour. One contiguous ~860 KB main segment (code to ~rom 0xD8000, interleaved
-  with per-TU data pockets; libultra at the top end ~0x800D2xxx). WT's two
-  swap-at-same-vram overlays don't exist here (16 MB cart, no need).
-- **Newer libultra/IDO than WT**: byte-level fingerprint transfer mostly fails
-  (3/46 direct matches, all handwritten-asm leaf functions). Identification must
-  redo WT's evidence-driven method, accelerated by rank/structure anchors
-  (jal-frequency table correlates well; osRecvMesg is almost certainly the #1
-  most-called function at 0x800D427C — unconfirmed).
+- **Same entrypoint as World Tour (0x80000400)**, same IDO-family compiler, same
+  fixed-segment mapping (rom 0x1000 <-> vram 0x80000400).
+- **Same overlay architecture as World Tour**: two CPU overlays, BOTH loading at
+  vram 0x80090000 (swap-at-same-address), 9-word descriptors at rom
+  0x37A30/0x37A54 — just stored right after the fixed image (rom 0x3C770 /
+  0x834A0) instead of at the end of ROM. An earlier "no overlays" misread
+  interpreted overlay code at contiguous vram and produced hundreds of phantom
+  recompile errors (cross-function branch chaos) before the descriptor tables
+  settled it. With correct mapping the overlays disassemble cleanly (373 + 657
+  functions).
+- **Newer libultra/IDO than WT**: byte-level fingerprint transfer fails (3/46,
+  handwritten-asm leaves only). Identification redoes WT's evidence-driven
+  method; first result: **func_800268A0 = osInitialize** (game_main's first
+  call, confirmed by the first-boot crash chain).
 - **Audio microcode is NOT byte-identical to WT's aspMain** (newer revision).
-  Locate it the way WT did: boot far enough to log the OSTask fields from
-  `get_rsp_microcode` (see WT's rsp/README.md "Method").
-- 3,159 functions across 27 asm subsegments (splat; code/data interleave mapped
-  by tools/classify.py using rabbitizer instruction validity at 256-byte
-  granularity).
-- 25 functions contain cop0/cache/eret/tlb opcodes (tools scan) — stubbed for
-  the first recompile exactly as WT's bring-up did, to be RENAMEd as identified.
-- **PARKED REGION rom 0x88000-0xB0000 (~160 KB, vram ~0x80087400-0x800AF400)**:
-  declared data for the bootstrap. It passes instruction-level validity checks
-  but is full of conditional branches spanning tens of KB across spimdisasm's
-  function splits — N64Recomp's one-entry function model can't express it
-  piecemeal. Hypothesis: AKI's hand-written match-engine core with multiple
-  entry points and free cross-branching (jal targets from outside force splits
-  mid-flow). If correct, the game may boot to menus without it but will crash
-  entering a match. Conquering it (likely: treat as one unit / find the real
-  entry set / N64Recomp single-function-with-alt-entries modeling) is the next
-  major analysis project after boot bring-up.
-- Idle-thread spin located at 0x80000560-0x80000568 in func_800004B8
-  (`jal func_8001C580; j back` — WT's exact cooperative-scheduler deadlock
-  pattern). Queued: `[[patches.instruction]]` in revenge.toml rewriting the j at
-  0x80000568 to 0x1000FFFF (`b .`) so N64Recomp emits pause_self, mirroring
-  wcw.toml's documented fix.
+  Locate via the runtime OSTask log in get_rsp_microcode (already wired; prints
+  on any boot that reaches an audio task).
+- 1,720 functions across main + 2 overlays; ~40 stubs (cop0/cache OS layer +
+  a few cross-branching asm functions, logged in syms/bootstrap_stubs.log).
+- Idle-thread spin at 0x80000560-0x568 in func_800004B8 — WT's exact
+  cooperative-scheduler deadlock pattern; the self-branch instruction patch is
+  already in revenge.toml (mirrors wcw.toml's documented fix).
+- Code/data interleave in the fixed segment mapped by tools/classify.py
+  (rabbitizer validity + branch-locality + jump-target sanity at 256-byte
+  granularity); overlay section bounds come from the descriptors (byte-exact).
 
 ## Layout
 
@@ -62,16 +53,14 @@ TOMLs — local dir for now, split into a Syms repo before any public release),
 forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
 (upstream commit `ffb39cd`).
 
-## Next steps
+## Next steps (WT's Phase-3 bring-up loop)
 
-1. Clean first recompile (tools/recomp-loop.ps1 iterates missing function
-   boundaries from N64Recomp tail-call errors).
-2. Port shell: adapt WT's CMakeLists + src/main (game id `revenge.us`, hash
-   check, SaveType — Revenge may use cart SRAM rather than Controller Pak;
-   verify at bring-up).
-3. libultra identification for the runtime-provided set (threads/mesg/VI):
-   WT's disasm/libultra.md documents per-function evidence patterns; the
-   jal-rank + MMIO-block anchors in tools/fingerprint3.py narrow candidates.
-4. Boot bring-up: expect WT's invariant list to apply (idle-thread busy-poll
-   needing a self-branch patch, PresentationMode Console, Framerate Original,
-   G_FORCEMTX-only rendering → RT64 zero-VP guard already in the rt64 fork).
+1. RENAME func_800268A0 = osInitialize in tools/gen_symbols.py, regen, recompile,
+   rebuild, boot — repeat: each crash/hang names the next libultra function
+   (thread/mesg/VI set), evidence-logged like WT's disasm/libultra.md.
+2. Once the VI/retrace loop runs: locate the audio ucode from the OSTask log,
+   RSPRecomp it (rsp/, WT's wcw_audio.toml as template).
+3. Verify SaveType (Revenge may use cart SRAM rather than Controller Pak — check
+   the game's save driver against WT's raw-SI pattern).
+4. Review syms/bootstrap_stubs.log stubs once booting (which are game code that
+   needs proper treatment vs OS asm the runtime replaces).
