@@ -1,0 +1,1 @@
+func_80018C24 = 0x80018C24; // type:func size:0xA0

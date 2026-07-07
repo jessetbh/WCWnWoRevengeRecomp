@@ -1,0 +1,123 @@
+name: WCW-nWo Revenge (USA)
+sha1: e1711a2511394b9357b5f1ac8ca5cc17bd674836
+options:
+  basename: revenge
+  target_path: revenge.z64
+  elf_path: build/revenge.elf
+  base_path: .
+  platform: n64
+  compiler: IDO
+
+  asm_path: asm
+  data_path: asm/data
+  ld_script_path: revenge.ld
+  ld_dependencies: True
+
+  find_file_boundaries: True
+  header_encoding: ASCII
+
+  o_as_suffix: True
+  use_legacy_include_asm: False
+  mips_abi_float_regs: o32
+
+  symbol_addrs_path:
+    - symbol_addrs.txt
+  reloc_addrs_path:
+    - reloc_addrs.txt
+
+  undefined_funcs_auto_path: undefined_funcs_auto.txt
+  undefined_syms_auto_path: undefined_syms_auto.txt
+
+  libultra_symbols: True
+  hardware_regs: True
+
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+
+# Layout (tools/recon.py, 2026-07-07): unlike World Tour, Revenge has NO overlay
+# system — one contiguous main segment, rom 0x1000 <-> vram 0x80000400 (same
+# entrypoint as WT), code to ~0xD8000 with data pockets at the jr-density gaps,
+# libultra at the top (0x800D2xxx+). IPL3 loads the standard 1 MB, so the loaded
+# segment runs to rom 0x101000; everything after is on-demand assets.
+# Code/data boundaries below are 16KB-coarse from the density scan — refine as
+# splat output demands.
+segments:
+  - name: header
+    type: header
+    start: 0x0
+
+  - name: ipl3
+    type: bin
+    start: 0x40
+
+  - name: entry
+    type: code
+    start: 0x1000
+    vram: 0x80000400
+    subsegments:
+      - [0x1000, hasm]
+
+  - name: main
+    type: code
+    start: 0x1050
+    vram: 0x80000450
+    follows_vram: entry
+    subsegments:
+      - [0x1050, asm]
+      - [0x2CC00, data]
+      - [0x2D500, asm]
+      - [0x2D800, data]
+      - [0x2E100, asm]
+      - [0x2E600, data]
+      - [0x2E900, asm]
+      - [0x2EB00, data]
+      - [0x2F500, asm]
+      - [0x2FA00, data]
+      - [0x30B00, asm]
+      - [0x30E00, data]
+      - [0x31500, asm]
+      - [0x31900, data]
+      - [0x32600, asm]
+      - [0x32C00, data]
+      - [0x33000, asm]
+      - [0x33C00, data]
+      - [0x33F00, asm]
+      - [0x34E00, data]
+      - [0x35400, asm]
+      - [0x35800, data]
+      - [0x35C00, asm]
+      - [0x36800, data]
+      - [0x36B00, asm]
+      - [0x36D00, data]
+      - [0x39800, asm]
+      - [0x39A00, data]
+      - [0x3B800, asm]
+      - [0x3BA00, data]
+      - [0x3C700, asm]
+      - [0x72400, data]
+      - [0x76800, asm]
+      - [0x76A00, data]
+      - [0x76D00, asm]
+      - [0x76F00, data]
+      - [0x77200, asm]
+      - [0x78100, data]
+      - [0x7EC00, asm]
+      - [0x7EE00, data]
+      - [0x7F000, asm]
+      - [0x7F300, data]
+      - [0x7FE00, asm]
+      - [0x80100, data]
+      - [0x81100, asm]
+      - [0x81400, data]
+      - [0x82A00, asm]
+      - [0xD5F00, data]
+      - [0xD6500, asm]
+      - [0xD6800, data]
+      - [0xD7A00, asm]
+      - [0xD8000, data]
+
+  - name: assets
+    type: bin
+    start: 0x101000
+
+  - [0x1000000]
