@@ -21,20 +21,27 @@ rt64, `wcw` branches — the `[wcw fix]` set is REQUIRED and shared; any edit un
 `lib/` follows WT's fork workflow: commit on `wcw` branch, push, bump pin, rerun
 WT's `lib-patches\export.ps1`).
 
-**Status (2026-07-07): builds and executes.** Clean recompile (1,684 funcs),
-`build-msvc\RevengeRecompiled.exe` links, runtime initializes, boot DMA correct,
-recompiled code runs, crashes in recompiled `osInitialize` — the expected
-zero-RENAMEs first boot. README.md has the full findings; the bring-up loop is:
+**Status (2026-07-07): GAME RUNS — 30fps, RDP frames render through RT64.**
+The Phase-3 bring-up loop is DONE for boot: 11 iterations named **38 libultra
+functions** (evidence per function in `disasm/libultra.md`), overlays swap,
+gfx ucode = F3DEX2.fifo 2.06, telemetry `vis/s=30 ext=0 dpc+30/s`, no crashes.
+The loop tooling, if more identifications are needed:
 
-1. RENAME the next-identified libultra function in `tools\gen_symbols.py`
-   (**first one banked: `func_800268A0` = osInitialize**, from the symbolized
-   crash chain `game_main → 800268A0 → 800275F0 → 800281F0`).
+1. RENAME the identified function in `tools\gen_symbols.py` (verify a runtime
+   shim exists first — `grep <name>_recomp lib/N64ModernRuntime/{librecomp,
+   ultramodern}/src/*.cpp`; if it was stubbed in revenge.toml, remove it there).
 2. `python tools\gen_symbols.py` → `.\N64Recomp.exe revenge.toml` →
    `cmake --build build-msvc --target RevengeRecompiled` → run with
-   `WCW_AUTOBOOT=revenge.z64` from `build-msvc\` → symbolize the next crash
-   against `build-msvc\RevengeRecompiled.map` (nearest map symbol ≤ RVA,
-   preferred base 0x140000000) → identify → repeat. Log evidence per function
-   the way WT's `disasm/libultra.md` does.
+   `WCW_AUTOBOOT=revenge.z64` from `build-msvc\` → symbolize crashes with
+   `python tools\symbolize.py --log <err.log>` (parses the backtrace against
+   build-msvc\RevengeRecompiled.map) → identify → repeat. For silent hangs use
+   `WCW_HEALTH_LOG=1 WCW_VI_LOG=1` (1/s telemetry: vis/s = real frame rate,
+   ext = undelivered-message backlog; ext growing with del/s=0 means a game
+   thread is spinning without yielding).
+
+**Next phase: audio.** OSTask log gives ucode vram 0x8002BD10 / data
+0x8003A5C0 / size 0x1000 (type=2 tasks fire continuously). RSPRecomp per WT's
+wcw_audio.toml. Then: input verify, SaveType verify, stubs review.
 
 ## Hard-won facts (do not re-derive)
 

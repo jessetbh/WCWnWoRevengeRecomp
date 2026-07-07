@@ -84,3 +84,8 @@ N64Recomp.exe
 RSPRecomp.exe
 *.dll
 recomp-out.txt
+
+# bring-up boot logs + screenshots (local diagnostics)
+boot*.log
+boot*.err.log
+boot-screenshot.png
