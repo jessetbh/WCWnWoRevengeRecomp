@@ -72,6 +72,13 @@ forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
    game code needing treatment vs OS asm the runtime replaces).
 5. Cosmetic: window title still says "WCW vs. nWo World Tour: Recompiled"
    (shared shell string) — rename when the public name is picked.
-6. lib/N64ModernRuntime has two local `[wcw fix]` commits pending push + pin
-   bump + WT `lib-patches\export.ps1` rerun (overlay-map fixes; see CLAUDE.md
-   fork workflow).
+6. **Pending fork bookkeeping** (owner action; see CLAUDE.md fork workflow):
+   lib/N64ModernRuntime has local commit `dc4592a` on its `wcw` branch
+   ("[wcw fix] Overlay swap mapping: table-driven rom lookup +
+   registered-address filter" — pi.cpp + overlays.cpp; no-op for WT's layout).
+   This repo's pin already points at it. Still to do:
+   (a) `git push` from `lib\N64ModernRuntime` to the jessetbh fork;
+   (b) in the WT checkout, advance its lib\N64ModernRuntime submodule to
+   include `dc4592a` (keep both ports on the same fork commit);
+   (c) run `..\WcwNwoWorldTour\lib-patches\export.ps1` and commit the
+   refreshed N64ModernRuntime.patch in WT.
