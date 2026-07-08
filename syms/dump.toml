@@ -516,7 +516,7 @@ functions = [
     { name = "osViSetYScale", vram = 0x80021090, size = 0x44 },
     { name = "osViSwapBuffer", vram = 0x800210E0, size = 0x44 },
     { name = "osViBlack", vram = 0x80021130, size = 0x5C },
-    { name = "osContStartReadData", vram = 0x80021190, size = 0x80 },
+    { name = "func_80021190", vram = 0x80021190, size = 0x80 },
     { name = "func_80021210", vram = 0x80021210, size = 0x20 },
     { name = "osContInit", vram = 0x80021230, size = 0x19C },
     { name = "func_800213CC", vram = 0x800213CC, size = 0xB4 },

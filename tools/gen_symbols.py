@@ -98,7 +98,11 @@ RENAME = {
     "func_80026E60": "osJamMesg",       # queue-full loop + insert at FRONT (first-1 mod count)
     "func_80022000": "osAiSetFrequency",# dacRate = osViClock(D_80038808)/freq, AI_DACRATE/BITRATE writes
     "func_80021230": "osContInit",      # one-time flag D_80037530, osGetTime vs 0x165A0BB PIF delay
-    "func_80021190": "osContStartReadData", # __osSiGetAccess, __osContLastCmd D_8007BD30, pack/write/recv/read
+    # func_80021190 (osContStartReadData) rename REMOVED 2026-07-07: renaming it made
+    # the runtime shim swallow the read request while the game's own (un-renamed)
+    # osContGetReadData parsed a PIF RAM nobody filled -> input dead. WT's invariant
+    # is the RAW-SI path: rename ONLY osContInit + __osSiRawStartDma/__osSiDeviceBusy
+    # and let the game's controller layer run against si.cpp's PIF emulation.
     "func_80025810": "__osSiRawStartDma",   # SI_STATUS&3 busy, WB-DCache 64, SI PIF RD64B/WR64B — activates si.cpp PIF emu
     "func_800281F0": "__osSiDeviceBusy",    # lw SI_STATUS(0xA4800018) & 3 — frame 3 of the first-boot crash chain
     "func_8001CE80": "osVirtualToPhysical", # KSEG0/1 & 0x1FFFFFFF + __osProbeTLB(func_80026B50) fallback

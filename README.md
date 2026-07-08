@@ -67,9 +67,15 @@ forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
    narrative and the AL structure map in rsp/README.md. Lesson for the
    remaining stubs review (step 4): a stub that "boots fine" can still be
    load-bearing game code.
-2. **Verify visuals/input in-game** (attract intro cinematic renders correctly
-   — WCW Monday Nitro stage, screenshot-verified; confirm title/menus and the
-   keyboard/pad input path via the osContStartReadData shim).
+2. ~~**Verify visuals/input in-game**~~ **DONE 2026-07-07 — INPUT WORKS.**
+   Keyboard Start breaks the attract loop to the title screen and the menus
+   navigate/confirm correctly (screenshot-verified through Mode Select →
+   Exhibition → Single/Tag Match). Root cause of the initial dead input: the
+   bring-up had RENAMEd func_80021190 = osContStartReadData, which made the
+   runtime shim swallow read requests while the game's own (un-renamed)
+   osContGetReadData parsed a PIF RAM nobody filled. WT's invariant holds
+   exactly: rename ONLY osContInit + __osSiRawStartDma/__osSiDeviceBusy and
+   let the game's controller layer run against si.cpp's PIF emulation.
 3. Verify SaveType (Revenge may use cart SRAM rather than Controller Pak — check
    the game's save driver against WT's raw-SI pattern).
 4. ~~Review remaining revenge.toml stubs~~ **DONE 2026-07-07.** All 13
