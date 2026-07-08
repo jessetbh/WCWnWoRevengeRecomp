@@ -3,7 +3,7 @@
 unrecompilable, runtime-provided) and rebuild revenge.toml's stubs block.
 recomp-loop2.py appends further stubs discovered at recompile time."""
 import re, struct, os
-os.chdir(r"C:\Users\selki\depot\WcwRevengeRecomp")
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 rev = open("revenge.z64", "rb").read()
 funcs = []
 sec_rom = sec_vram = 0

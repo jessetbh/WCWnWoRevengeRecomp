@@ -8,11 +8,11 @@ BEGIN
     BEGIN
         BLOCK "040904B0"
         BEGIN
-            VALUE "FileDescription", "WCW vs. nWo World Tour: Recompiled"
+            VALUE "FileDescription", "WCW/nWo Revenge: Recompiled"
             VALUE "FileVersion", "0.1.0"
-            VALUE "InternalName", "WCWRecompiled"
-            VALUE "OriginalFilename", "WCWRecompiled.exe"
-            VALUE "ProductName", "WCW vs. nWo World Tour: Recompiled"
+            VALUE "InternalName", "RevengeRecompiled"
+            VALUE "OriginalFilename", "RevengeRecompiled.exe"
+            VALUE "ProductName", "WCW/nWo Revenge: Recompiled"
             VALUE "ProductVersion", "0.1.0"
         END
     END

@@ -1,7 +1,7 @@
 # Iterate: N64Recomp -> harvest missing function boundaries from "Tail call" infos
 # -> add to splat symbol_addrs.txt -> re-split -> regen symbols -> retry.
 # Stops when N64Recomp exits 0 or no new addresses are learned.
-$root = 'C:\Users\selki\depot\WcwRevengeRecomp'
+$root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 for ($i = 1; $i -le 25; $i++) {
     & .\N64Recomp.exe revenge.toml > recomp-out.txt 2>&1

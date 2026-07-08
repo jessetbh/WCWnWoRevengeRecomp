@@ -11,7 +11,7 @@ FAILING function only (warnings about other functions are non-fatal):
 """
 import re, subprocess, glob, sys, os
 
-ROOT = r"C:\Users\selki\depot\WcwRevengeRecomp"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 PY = os.path.join("disasm", ".venv", "Scripts", "python.exe")
 

@@ -6,7 +6,7 @@ tail blocks, drop any conflicting function-start entries inside the new range,
 re-split, regenerate, retry."""
 import re, subprocess, glob, sys, os
 
-ROOT = r"C:\Users\selki\depot\WcwRevengeRecomp"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 PY = os.path.join("disasm", ".venv", "Scripts", "python.exe")
 
