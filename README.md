@@ -31,7 +31,7 @@ sharing its runtime stack and conventions.
   * [Widescreen Support](#widescreen-support)
   * [Easy-to-Use Menus](#easy-to-use-menus)
   * [Controls Tailored to This Game](#controls-tailored-to-this-game)
-  * [Cartridge Saves That Just Work](#cartridge-saves-that-just-work)
+  * [Cartridge Saves and Rumble Together](#cartridge-saves-that-just-work)
 * [Planned Features](#planned-features)
 * [FAQ](#faq)
 * [Known Issues](#known-issues)
@@ -83,11 +83,14 @@ stick, and the defensive pair on mirrored triggers. Grapple = A, attack = X, run
 climb/turnbuckle = Y, switch focus = bumpers. Keyboard: WASD moves, IJKL taunts,
 Space/Shift/Q/E/R for the face buttons. Everything is rebindable in the in-game menu.
 
-#### Cartridge Saves That Just Work
+#### Cartridge Saves and Rumble Together
 
 Unlike its predecessor, Revenge saves to the cartridge itself on real hardware — no
 Controller Pak juggling. The port emulates that battery-backed SRAM directly: your
 championship progress, records, and settings persist automatically across sessions.
+Because saves live on the cartridge, the controller slot is free for rumble: answer
+the game's "Rumble Pak detected" prompt at the title screen and your gamepad
+vibrates during matches.
 
 ## Planned Features
 
