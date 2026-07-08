@@ -1,0 +1,134 @@
+# Reusable build workflow, adapted from WCWvsNWOWorldTourRecomp's validate.yml
+# (itself from BMHeroRecomp). The beta is Windows-only; Linux/macOS/Flatpak jobs
+# can be resurrected from BMHero's validate.yml when those platforms are tackled.
+#
+# Deltas vs the World Tour workflow:
+#  - No Syms submodule (symbols are tracked in-repo under syms/), so the main
+#    checkout uses the default token.
+#  - No patches/ pipeline yet, so the portable-LLVM (MIPS clang) step is absent.
+#    Restore it from WT's validate.yml when the patches pipeline is stood up.
+#
+# Required repository secrets:
+#   REVENGE_CI_PAT   - fine-grained PAT (Contents: read-only) with access to the
+#                      private ROM repo.
+#   REVENGE_ROM_REPO - "<owner>/<repo>" of the private repo holding revenge.z64
+#                      at its root.
+name: validate
+on:
+  workflow_call:
+    inputs:
+      SDL2_VERSION:
+        type: string
+        required: false
+        default: '2.30.3'
+      # Upstream N64Recomp commit the local RecompiledFuncs baseline was generated
+      # with (N64Recomp/N64Recomp). The runtime's recomp.h comes separately from the
+      # jessetbh/N64Recomp fork pinned inside lib/N64ModernRuntime.
+      N64RECOMP_COMMIT:
+        type: string
+        required: false
+        default: 'ffb39cdad1da5de07eaaa48bd1db4a89a7986771'
+    secrets:
+      REVENGE_CI_PAT:
+        required: true
+      REVENGE_ROM_REPO:
+        required: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        type: [ Release ]
+    name: windows (${{ matrix.type }})
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          submodules: recursive
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-revenge-ccache-${{ matrix.type }}
+      - name: Install Windows Dependencies
+        run: |
+          choco install ninja
+          Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+      - name: Configure Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Get ROM
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.REVENGE_ROM_REPO }}
+          token: ${{ secrets.REVENGE_CI_PAT }}
+          path: revenge-secret
+      - name: Prepare Build
+        run: copy .\revenge-secret\revenge.z64 .\
+      - name: Build N64Recomp & RSPRecomp
+        run: |
+          git clone https://github.com/N64Recomp/N64Recomp.git --recurse-submodules N64RecompSource
+          cd N64RecompSource
+          git checkout ${{ inputs.N64RECOMP_COMMIT }}
+          git submodule update --init --recursive
+          $cpuCores = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
+
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
+          cmake --build cmake-build --config Release --target N64RecompCLI -j $cpuCores
+          cmake --build cmake-build --config Release --target RSPRecomp -j $cpuCores
+
+          cp cmake-build/N64Recomp.exe ..
+          cp cmake-build/RSPRecomp.exe ..
+      - name: Run N64Recomp & RSPRecomp
+        run: |
+          ./N64Recomp.exe revenge.toml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./RSPRecomp.exe rsp/revenge_audio.toml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build RevengeRecompiled
+        run: |
+          $cpuCores = (Get-CimInstance -ClassName Win32_Processor).NumberOfLogicalProcessors
+
+          # Remove Chocolatey LLVM from PATH so VS's clang-cl is used for the port.
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -ne 'C:\Program Files\LLVM\bin' }) -join ';'
+
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.type }} -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_C_COMPILER=clang-cl -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
+          cmake --build cmake-build --config ${{ matrix.type }} --target RevengeRecompiled -j $cpuCores
+      - name: Package
+        run: |
+          New-Item -ItemType Directory -Path package > $null
+          Copy-Item cmake-build/RevengeRecompiled.exe package/
+          Copy-Item -Recurse cmake-build/assets package/assets
+          Copy-Item cmake-build/recompcontrollerdb.txt package/
+          Copy-Item cmake-build/SDL2.dll, cmake-build/dxil.dll, cmake-build/dxcompiler.dll package/
+          Copy-Item COPYING package/
+          Copy-Item .github/release-readme.txt package/README.txt
+          # App-local VC++ runtime: the exe and the dxc DLLs import MSVCP140/VCRUNTIME140/
+          # VCRUNTIME140_1/MSVCP140_ATOMIC_WAIT, which stock Windows does NOT ship (the
+          # VC++ Redistributable provides them). Placing them next to the exe makes the
+          # zip run on machines without the redist (Windows searches the app dir first;
+          # these are not KnownDLLs). Microsoft licenses these files for app-local
+          # redistribution.
+          $crt = Get-ChildItem "$env:VCToolsRedistDir\x64\Microsoft.VC*.CRT" | Select-Object -First 1
+          Copy-Item "$($crt.FullName)\msvcp140.dll", "$($crt.FullName)\vcruntime140.dll", "$($crt.FullName)\vcruntime140_1.dll", "$($crt.FullName)\msvcp140_atomic_wait.dll" package/
+      - name: Assert no stray files in package
+        run: |
+          $stray = Get-ChildItem -Recurse package -Include *.z64,*.n64,*.v64,*.json,*.json.bak,*.map,*.pdb,*.log
+          $stray += Get-ChildItem -Recurse -Directory package -Filter saves
+          if ($stray) { $stray | ForEach-Object { Write-Host "STRAY: $($_.FullName)" }; exit 1 }
+          Write-Host "package is clean"
+      - name: Archive RevengeRecompiled
+        uses: actions/upload-artifact@v4
+        with:
+          name: RevengeRecompiled-${{ runner.os }}-${{ matrix.type }}
+          path: package/*
+      - name: Archive Debug Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: RevengeRecompiled-DebugSyms-${{ matrix.type }}
+          path: |
+            cmake-build/RevengeRecompiled.map
+            cmake-build/RevengeRecompiled.pdb
+          if-no-files-found: warn
