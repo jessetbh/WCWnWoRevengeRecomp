@@ -85,7 +85,7 @@ SECTIONS
         main_TEXT_END = .;
         main_TEXT_SIZE = ABSOLUTE(main_TEXT_END - main_TEXT_START);
         main_DATA_START = .;
-        build/asm/asm/data/2C800.data.o(.data);
+        build/asm/asm/data/2C840.data.o(.data);
         build/asm/asm/data/2D800.data.o(.data);
         build/asm/asm/data/2E600.data.o(.data);
         build/asm/asm/data/2EB00.data.o(.data);

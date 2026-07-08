@@ -1,1 +1,11 @@
 func_80018C24 = 0x80018C24; // type:func size:0xA0
+func_80096A6C = 0x80096A6C; // type:func size:0x320 rom:0x431DC
+func_800A77C4 = 0x800A77C4; // type:func size:0x470 rom:0x53F34
+func_800A9010 = 0x800A9010; // type:func size:0xCC rom:0x55780
+func_800ADBFC = 0x800ADBFC; // type:func size:0x184 rom:0x5A36C
+func_800AF978 = 0x800AF978; // type:func size:0x578 rom:0x5C0E8
+func_800B3BCC = 0x800B3BCC; // type:func size:0x18C rom:0x6033C
+func_8009B2EC = 0x8009B2EC; // type:func size:0x1488 rom:0x8E78C
+func_8009C774 = 0x8009C774; // type:func size:0x102C rom:0x8FC14
+func_800D746C = 0x800D746C; // type:func size:0x218 rom:0xCA90C
+func_800286F0 = 0x800286F0; // type:func size:0x1D0 rom:0x292F0

@@ -64,7 +64,10 @@ segments:
     follows_vram: entry
     subsegments:
       - [0x1050, asm]
-      - [0x2C800, data]
+      # boundary moved 0x2C800 -> 0x2C840 (2026-07-07): func_8002BBCC's tail
+      # (jr $ra at rom 0x2C834) was being split off as data; real CPU-code end
+      # is 0x2C840 where the RSP boot ucode begins (audio ucode text at 0x2C910).
+      - [0x2C840, data]
       - [0x2D600, asm]
       - [0x2D800, data]
       - [0x2E100, asm]

@@ -43,21 +43,22 @@ stubs = [
     # event-post function (alSynStartVoice/SetVol/SetPitch/StopVoice all route
     # through it); the stub was the silent-audio root cause. IDO shared-tail split
     # (j into func_80018CAC) fixed by size-extending to 0xA0 in symbol_addrs.txt.
+    # 2026-07-07 stubs review: the 13 non-privileged bootstrap stubs (game code
+    # stubbed for control-flow reasons, syms/bootstrap_stubs.log) were re-attempted
+    # after the func_80018C24 lesson — j-to-function-start is a clean tail call for
+    # N64Recomp; only the ones below still fail, each with its reason.
+    #
+    # __osDispatchThread: no priv opcodes itself, but it is libultra's dispatcher —
+    # jal'd ONLY from inside func_80025F30 (= __osException, stubbed above; its 355
+    # insns end exactly at 0x800264BC) and branches back into the handler's body
+    # (.L80026474/.L8002648C, __osRunQueue/__osRunningThread block). Dead code under
+    # ultramodern's scheduler; stub is correct.
     "func_800264BC",
+    # OS asm glue thunks that j into the 0x80001254 handler region and contain
+    # swc2/lwc2 (COP2 is unusable on VR4300 — N64Recomp "Unhandled instruction:
+    # swc2"): not reachable game code, runtime replaces the OS layer they serve.
     "func_8002D500",
     "func_8002D510",
-    "func_80096A6C",
-    "func_800A77C4",
-    "func_800A9010",
-    "func_800ADBFC",
-    "func_800AF978",
-    "func_800B3BCC",
-    "func_8009B2EC",
-    "func_8009C148",
-    "func_8009C774",
-    "func_800D746C",
-    "func_800286F0",
-    "func_8002BBCC",
 ]
 
 ignored = [

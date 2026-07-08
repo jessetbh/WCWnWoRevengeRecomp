@@ -92,5 +92,7 @@ recomp-out.txt
 # bring-up boot logs + screenshots (local diagnostics)
 boot*.log
 boot*.err.log
+probe*.log
+probe*.err.log
 boot-screenshot.png
 shot-*.png

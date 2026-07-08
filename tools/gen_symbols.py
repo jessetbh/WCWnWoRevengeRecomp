@@ -117,6 +117,18 @@ RENAME = {
     "func_80020DA0": "osSpTaskYielded",   # status bit 0x80 -> OS_TASK_YIELDED flags
 }
 
+# Extra function entry points injected into dump.toml that splat cannot express:
+# jal-referenced entries living INSIDE another sized function (IDO multi-entry
+# shared-tail clusters). N64Recomp recompiles each function independently from
+# ROM bytes, so the overlap just duplicates a little code.
+# func_80028860: jal'd from overlay code, but func_800286F0 (also jal'd, game
+# code un-stubbed in the 2026-07-07 stubs review) branches into its middle at
+# 0x80028880 — so 286F0's splat extent absorbs it (size 0x1D0 hint in
+# disasm/symbol_addrs.txt) and the 28860 entry is re-added here.
+EXTRA_FUNCS = {
+    "main_1050": [("func_80028860", 0x80028860, 0x60)],
+}
+
 # Functions suppressed as symbols (continuation fragments merged into an earlier
 # function by tools/recomp-loop3.py's backward-merge treatment).
 SKIP = set()
@@ -183,6 +195,7 @@ def main():
             f.write(f"\n[[section]]\nname = \"{name}\"\n")
             f.write(f"rom = 0x{rom:08X}\nvram = 0x{vram:08X}\nsize = 0x{size:X}\n\n")
             f.write("functions = [\n")
+            funcs = sorted(list(funcs) + EXTRA_FUNCS.get(name, []), key=lambda t: t[1])
             for fn, fv, fs in funcs:
                 if fn in SKIP:
                     continue

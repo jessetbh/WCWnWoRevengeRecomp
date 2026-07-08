@@ -72,8 +72,16 @@ forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
    keyboard/pad input path via the osContStartReadData shim).
 3. Verify SaveType (Revenge may use cart SRAM rather than Controller Pak — check
    the game's save driver against WT's raw-SI pattern).
-4. Review remaining revenge.toml stubs + syms/bootstrap_stubs.log (which are
-   game code needing treatment vs OS asm the runtime replaces).
+4. ~~Review remaining revenge.toml stubs~~ **DONE 2026-07-07.** All 13
+   non-privileged bootstrap stubs (syms/bootstrap_stubs.log) triaged: 10 were
+   real game code and are now recompiled live (8 IDO shared-tail splits fixed
+   via symbol_addrs.txt size hints — incl. a 0x1488-byte ovl_b cluster — one
+   segment-boundary fix at rom 0x2C840 for func_8002BBCC's tail, one
+   multi-entry cluster via the EXTRA_FUNCS injection in gen_symbols.py);
+   3 re-stubbed with documented reasons (__osDispatchThread + two swc2 OS
+   thunks). The 18 privileged cop0/cache/tlb stubs are genuine OS asm the
+   runtime replaces. Verified: 120s run, 30fps, ext=0, audio full-scale, no
+   crashes.
 5. Cosmetic: window title still says "WCW vs. nWo World Tour: Recompiled"
    (shared shell string) — rename when the public name is picked.
 6. **Pending fork bookkeeping** (owner action; see CLAUDE.md fork workflow):
