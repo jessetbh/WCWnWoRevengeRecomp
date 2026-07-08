@@ -484,7 +484,7 @@ int main(int argc, char** argv) {
     (void)show_console;
 
     // Program identity. The program id names the config/save folder
-    // (%LOCALAPPDATA%\WCWRecompiled on Windows) — keep it matched to the exe name.
+    // (%LOCALAPPDATA%\RevengeRecompiled on Windows) — keep it matched to the exe name.
     // Set before anything that resolves the app folder (logging below, config path later).
     recompui::programconfig::set_program_name("WCW vs. nWo World Tour: Recompiled");
     recompui::programconfig::set_program_id(u8"RevengeRecompiled");
@@ -576,10 +576,13 @@ int main(int argc, char** argv) {
     game.game_id = u8"wcw.nwo.revenge.us";
     game.mod_game_id = "wcwnworevenge";
     game.thumbnail_bytes = std::span<const char>(icon_bytes);
-    // Sram = a 32 KB save buffer — the exact size of a Controller Pak, which is WCW's only
-    // save medium (no cart EEPROM/SRAM). The raw-SI PIF emulation (librecomp si.cpp) maps
-    // joybus pak reads/writes onto this buffer, so pak contents persist via librecomp's
-    // standard save file (saves/<game id>.bin).
+    // Sram = a 32 KB save buffer. VERIFIED 2026-07-07: Revenge (unlike World Tour) saves
+    // to CART SRAM — func_80000A40 is its osSramInit (PI handle base 0xA8000000, device
+    // type 3), and librecomp routes the resulting osEPiStartDma traffic at phys
+    // >= 0x08000000 into this buffer (saves/<game id>.bin). Save carries AKI's repeated
+    // "19 97 10 21" magic; a no-input boot validates and preserves it byte-for-byte.
+    // NB si.cpp's Controller Pak emulation shares this same buffer (WT's medium) — fine
+    // as long as Revenge never issues joybus pak transactions (it has no pak support).
     game.save_type = recomp::SaveType::Sram;
     game.is_enabled = true;
     // Must be SIGN-EXTENDED: entrypoint_address is a gpr (int64) and librecomp's MEM_*

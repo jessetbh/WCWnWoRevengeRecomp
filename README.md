@@ -76,8 +76,14 @@ forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
    osContGetReadData parsed a PIF RAM nobody filled. WT's invariant holds
    exactly: rename ONLY osContInit + __osSiRawStartDma/__osSiDeviceBusy and
    let the game's controller layer run against si.cpp's PIF emulation.
-3. Verify SaveType (Revenge may use cart SRAM rather than Controller Pak — check
-   the game's save driver against WT's raw-SI pattern).
+3. ~~Verify SaveType~~ **DONE 2026-07-07 — cart SRAM confirmed, saves persist.**
+   func_80000A40 is Revenge's osSramInit (PI handle 0xA8000000, device type 3,
+   linked into __osPiTable) — unlike WT, Revenge saves to cart SRAM, which
+   librecomp's SaveType::Sram routes natively (phys >= 0x08000000 →
+   saves/wcw.nwo.revenge.us.bin). Verified live: the save carries AKI's
+   repeated "19 97 10 21" magic with real data (5,630 nonzero bytes), play
+   sessions produce incremental 3-byte updates (read-modify-write), and a
+   no-input boot validates the magic and preserves the file byte-for-byte.
 4. ~~Review remaining revenge.toml stubs~~ **DONE 2026-07-07.** All 13
    non-privileged bootstrap stubs (syms/bootstrap_stubs.log) triaged: 10 were
    real game code and are now recompiled live (8 IDO shared-tail splits fixed
