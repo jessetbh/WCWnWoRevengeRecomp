@@ -1,108 +1,199 @@
-# WCW/nWo Revenge: Recompiled (bootstrap)
+# WCW/nWo Revenge: Recompiled
 
-Native PC port of **WCW/nWo Revenge (N64, USA)** via static recompilation —
-sister project to [WCW vs. nWo World Tour: Recompiled](https://github.com/jessetbh/WCWvsNWOWorldTourRecomp),
-reusing its runtime stack (the jessetbh forks with the `[wcw fix]` set), tooling,
-and hard-won knowledge. Same AKI engine family, one year newer.
+WCW/nWo Revenge: Recompiled is a project that uses
+[N64Recomp](https://github.com/N64Recomp/N64Recomp) to **statically recompile** the
+Nintendo 64 game *WCW/nWo Revenge (USA)* into a native PC port, running on the
+[N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime) with
+[RT64](https://github.com/rt64/rt64) as the rendering engine. It is the sister
+project of
+[WCW vs. nWo World Tour: Recompiled](https://github.com/jessetbh/WCWvsNWOWorldTourRecomp),
+sharing its runtime stack and conventions.
 
-**Status: GAME RUNS (2026-07-07) — steady 30fps, RDP frames render through
-RT64.** One day of WT's Phase-3 bring-up loop (11 boot iterations, each
-crash/hang symbolized against the .map and identified by evidence) took the
-port from the zero-RENAMEs first-boot crash to a running game: **38 libultra
-functions named** (threads/mesg/events/VI/PI/SI/AI/SP-task/clock sets — full
-per-function evidence in `disasm/libultra.md`), overlays swap in correctly,
-graphics ucode identified as **F3DEX2.fifo 2.06** (RT64-handled), health
-telemetry shows `vis/s=30, ext=0, dpc+30/s` with zero crashes. **Audio WORKS
-(same day):** the RSP audio ucode is recompiled (rsp/revenge_audio.toml) and
-the game's music/SFX render at full scale after fixing a mis-stubbed AL synth
-function (rsp/README.md has the story).
-No game assets are distributed; supply your own ROM (US release, SHA1
-`E1711A2511394B9357B5F1AC8CA5CC17BD674836`, big-endian, entrypoint `0x80000400`).
+### **This repository and its releases do not contain game assets. The original game is required to build or run this project.**
 
-## What's known so far (see tools/*.py for the evidence)
+> **Status: beta.** The game boots, renders at high resolution, plays music and
+> sound effects, takes keyboard and gamepad input through the menus and matches, and
+> saves persist automatically. See [Known Issues](#known-issues) for what's still
+> rough.
 
-- **Same entrypoint as World Tour (0x80000400)**, same IDO-family compiler, same
-  fixed-segment mapping (rom 0x1000 <-> vram 0x80000400).
-- **Same overlay architecture as World Tour**: two CPU overlays, BOTH loading at
-  vram 0x80090000 (swap-at-same-address), 9-word descriptors at rom
-  0x37A30/0x37A54 — just stored right after the fixed image (rom 0x3C770 /
-  0x834A0) instead of at the end of ROM. An earlier "no overlays" misread
-  interpreted overlay code at contiguous vram and produced hundreds of phantom
-  recompile errors (cross-function branch chaos) before the descriptor tables
-  settled it. With correct mapping the overlays disassemble cleanly (373 + 657
-  functions).
-- **Newer libultra/IDO than WT**: byte-level fingerprint transfer fails (3/46,
-  handwritten-asm leaves only). Identification redoes WT's evidence-driven
-  method; first result: **func_800268A0 = osInitialize** (game_main's first
-  call, confirmed by the first-boot crash chain).
-- **Audio microcode is NOT byte-identical to WT's aspMain** (newer revision).
-  Locate via the runtime OSTask log in get_rsp_microcode (already wired; prints
-  on any boot that reaches an audio task).
-- 1,720 functions across main + 2 overlays; ~40 stubs (cop0/cache OS layer +
-  a few cross-branching asm functions, logged in syms/bootstrap_stubs.log).
-- Idle-thread spin at 0x80000560-0x568 in func_800004B8 — WT's exact
-  cooperative-scheduler deadlock pattern; the self-branch instruction patch is
-  already in revenge.toml (mirrors wcw.toml's documented fix).
-- Code/data interleave in the fixed segment mapped by tools/classify.py
-  (rabbitizer validity + branch-locality + jump-target sanity at 256-byte
-  granularity); overlay section bounds come from the descriptors (byte-exact).
+<!-- TODO(release): capture and commit docs/screenshots/{gameplay,mode-select,title}.png
+<div align="center">
+  <img src="docs/screenshots/gameplay.png" width="640" alt="In-ring gameplay rendered at high resolution">
+  <br>
+  <img src="docs/screenshots/title.png" width="318" alt="Title screen">
+  <img src="docs/screenshots/mode-select.png" width="318" alt="Mode select menu">
+</div>
+-->
 
-## Layout
+## Table of Contents
+* [System Requirements](#system-requirements)
+* [Features](#features)
+  * [Plug and Play](#plug-and-play)
+  * [Fully Intact N64 Effects](#fully-intact-n64-effects)
+  * [Widescreen Support](#widescreen-support)
+  * [Easy-to-Use Menus](#easy-to-use-menus)
+  * [Controls Tailored to This Game](#controls-tailored-to-this-game)
+  * [Cartridge Saves That Just Work](#cartridge-saves-that-just-work)
+* [Planned Features](#planned-features)
+* [FAQ](#faq)
+* [Known Issues](#known-issues)
+* [Building](#building)
+* [Libraries Used and Projects Referenced](#libraries-used-and-projects-referenced)
+* [Special Thanks](#special-thanks)
 
-Mirrors World Tour: `disasm/` (splat project + own venv), `tools/`
-(gen_symbols.py, recon/fingerprint/classify scripts), `syms/` (generated symbol
-TOMLs — local dir for now, split into a Syms repo before any public release),
-`revenge.toml` (N64Recomp config), `lib/` (submodules of the same jessetbh
-forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
-(upstream commit `ffb39cd`).
+## System Requirements
 
-## Next steps (post-boot)
+Currently a **Windows** build is provided; other operating systems may be supported
+later.
 
-1. ~~**Audio voice path**~~ **DONE 2026-07-07 — AUDIO WORKS** (music + SFX at
-   full scale). The silence was a mis-stubbed game function: `func_80018C24`,
-   the libultra AL synth event-post that every alSynStartVoice/SetVol/SetPitch/
-   StopVoice flows through, was in revenge.toml's bootstrap stub list (IDO
-   shared-tail split had made it look unrecompilable). One-line
-   symbol_addrs.txt size-extension + un-stub fixed it; full root-cause
-   narrative and the AL structure map in rsp/README.md. Lesson for the
-   remaining stubs review (step 4): a stub that "boots fine" can still be
-   load-bearing game code.
-2. ~~**Verify visuals/input in-game**~~ **DONE 2026-07-07 — INPUT WORKS.**
-   Keyboard Start breaks the attract loop to the title screen and the menus
-   navigate/confirm correctly (screenshot-verified through Mode Select →
-   Exhibition → Single/Tag Match). Root cause of the initial dead input: the
-   bring-up had RENAMEd func_80021190 = osContStartReadData, which made the
-   runtime shim swallow read requests while the game's own (un-renamed)
-   osContGetReadData parsed a PIF RAM nobody filled. WT's invariant holds
-   exactly: rename ONLY osContInit + __osSiRawStartDma/__osSiDeviceBusy and
-   let the game's controller layer run against si.cpp's PIF emulation.
-3. ~~Verify SaveType~~ **DONE 2026-07-07 — cart SRAM confirmed, saves persist.**
-   func_80000A40 is Revenge's osSramInit (PI handle 0xA8000000, device type 3,
-   linked into __osPiTable) — unlike WT, Revenge saves to cart SRAM, which
-   librecomp's SaveType::Sram routes natively (phys >= 0x08000000 →
-   saves/wcw.nwo.revenge.us.bin). Verified live: the save carries AKI's
-   repeated "19 97 10 21" magic with real data (5,630 nonzero bytes), play
-   sessions produce incremental 3-byte updates (read-modify-write), and a
-   no-input boot validates the magic and preserves the file byte-for-byte.
-4. ~~Review remaining revenge.toml stubs~~ **DONE 2026-07-07.** All 13
-   non-privileged bootstrap stubs (syms/bootstrap_stubs.log) triaged: 10 were
-   real game code and are now recompiled live (8 IDO shared-tail splits fixed
-   via symbol_addrs.txt size hints — incl. a 0x1488-byte ovl_b cluster — one
-   segment-boundary fix at rom 0x2C840 for func_8002BBCC's tail, one
-   multi-entry cluster via the EXTRA_FUNCS injection in gen_symbols.py);
-   3 re-stubbed with documented reasons (__osDispatchThread + two swc2 OS
-   thunks). The 18 privileged cop0/cache/tlb stubs are genuine OS asm the
-   runtime replaces. Verified: 120s run, 30fps, ext=0, audio full-scale, no
-   crashes.
-5. Cosmetic: window title still says "WCW vs. nWo World Tour: Recompiled"
-   (shared shell string) — rename when the public name is picked.
-6. **Pending fork bookkeeping** (owner action; see CLAUDE.md fork workflow):
-   lib/N64ModernRuntime has local commit `dc4592a` on its `wcw` branch
-   ("[wcw fix] Overlay swap mapping: table-driven rom lookup +
-   registered-address filter" — pi.cpp + overlays.cpp; no-op for WT's layout).
-   This repo's pin already points at it. Still to do:
-   (a) `git push` from `lib\N64ModernRuntime` to the jessetbh fork;
-   (b) in the WT checkout, advance its lib\N64ModernRuntime submodule to
-   include `dc4592a` (keep both ports on the same fork commit);
-   (c) run `..\WcwNwoWorldTour\lib-patches\export.ps1` and commit the
-   refreshed N64ModernRuntime.patch in WT.
+A GPU supporting Direct3D 12.0 (Shader Model 6) or Vulkan 1.2 is required. A CPU
+supporting the SSE4.1 instruction set is also required (Intel Core 2 Penryn series or
+AMD Bulldozer and newer).
+
+If you have crashes on startup, make sure your graphics drivers are fully up to date.
+
+## Features
+
+#### Plug and Play
+
+Provide your copy of the US version of the game and start playing! The project loads
+assets directly from your ROM, so there is no separate extraction or build step.
+
+#### Fully Intact N64 Effects
+
+Rendering is hardware-accelerated through RT64 at high resolution, with the game's
+original visual effects intact — no emulator-style workarounds or hacks.
+
+#### Widescreen Support
+
+With Aspect Ratio set to **Expand** (the default), the 3D scene renders at your
+window's aspect ratio with a correctly widened field of view, while 2D interface
+elements stay at their original proportions.
+
+#### Easy-to-Use Menus
+
+Press Esc (or your gamepad's Back/Select button) during play to open the config menu:
+general settings, graphics settings, full input rebinding for keyboard and controller
+(two bindings per input), and audio settings. Menus can be used with mouse, keyboard,
+or controller.
+
+#### Controls Tailored to This Game
+
+Revenge moves on the N64 **d-pad** and taunts with the analog stick, so the default
+mappings are built for that: move on the left stick *and* d-pad, taunt on the right
+stick, and the defensive pair on mirrored triggers. Grapple = A, attack = X, run = B,
+climb/turnbuckle = Y, switch focus = bumpers. Keyboard: WASD moves, IJKL taunts,
+Space/Shift/Q/E/R for the face buttons. Everything is rebindable in the in-game menu.
+
+#### Cartridge Saves That Just Work
+
+Unlike its predecessor, Revenge saves to the cartridge itself on real hardware — no
+Controller Pak juggling. The port emulates that battery-backed SRAM directly: your
+championship progress, records, and settings persist automatically across sessions.
+
+## Planned Features
+
+* High framerate support (frame interpolation) — see [Known Issues](#known-issues)
+* Linux support
+* Mod support
+
+## FAQ
+
+#### What is static recompilation?
+
+Static recompilation is the process of automatically translating an application from
+one platform to another — here, the game's original MIPS machine code is translated
+into C and compiled for modern PCs. For details, see
+[N64Recomp](https://github.com/N64Recomp/N64Recomp). **This is not an emulator and not
+a decompilation.**
+
+#### How is this related to a decompilation project?
+
+It isn't — no public decompilation of WCW/nWo Revenge exists. Unlike most
+recompilation ports, which borrow symbol names from a decomp, this project generated
+its own symbol metadata from scratch via a [splat](https://github.com/ethteck/splat)
+disassembly (see `disasm/` and `syms/`).
+
+#### Where is the savefile stored?
+
+- Windows: `%LOCALAPPDATA%\RevengeRecompiled\saves\`
+
+Configuration files and the log file live one level up in the same app folder. Save
+data is preserved across updates.
+
+#### Can you run this project as a portable application?
+
+Yes — place a file named `portable.txt` in the same folder as the executable and
+saves, config files, and the stored ROM will be kept next to the executable instead.
+
+#### How do I choose a different ROM?
+
+**You don't.** This project is **only** a port of WCW/nWo Revenge, and it only
+accepts one specific ROM: the US (NTSC-U) N64 release
+(SHA1 `E1711A2511394B9357B5F1AC8CA5CC17BD674836`). **It is not an emulator and it
+cannot run any arbitrary ROM.**
+
+You can't accidentally load the wrong file — the launcher validates the ROM before
+storing its own copy (so the original file can be moved or deleted afterwards). If the
+stored copy ever goes missing or gets corrupted, the launcher simply offers **Load
+ROM** again.
+
+## Known Issues
+
+* **Frame interpolation is disabled** (Framerate is locked to Original). Like its
+  sister game, Revenge builds each visual frame from several RSP tasks and submits
+  fully composed matrices, which defeats RT64's frame-interpolation heuristics —
+  interpolated frames warp geometry. High-framerate support needs game-side
+  matrix-group patches and is planned.
+* Overlays such as MSI Afterburner and other software such as Wallpaper Engine can
+  cause performance issues that prevent the game from rendering correctly. Disabling
+  such software is recommended.
+
+## Building
+
+Building is **not** required to play — grab a release instead. To build from source,
+see [BUILDING.md](BUILDING.md).
+
+## Libraries Used and Projects Referenced
+
+* [N64Recomp](https://github.com/N64Recomp/N64Recomp) — the static recompiler this
+  port is built with
+* [N64ModernRuntime](https://github.com/N64Recomp/N64ModernRuntime) — the modern
+  runtime (ultramodern + librecomp)
+* [RT64](https://github.com/rt64/rt64) — the rendering engine
+* [RecompFrontend](https://github.com/N64Recomp/RecompFrontend) — launcher, config
+  menus, and input stack
+* [RmlUi](https://github.com/mikke89/RmlUi) for building the menus and launcher
+* [lunasvg](https://github.com/sammycage/lunasvg) for SVG rendering, used by RmlUi
+* [FreeType](https://freetype.org/) for font rendering, used by RmlUi
+* [SDL2](https://www.libsdl.org/) for windowing, input, and audio
+* [moodycamel::ConcurrentQueue](https://github.com/cameron314/concurrentqueue) for
+  semaphores and fast, lock-free MPMC queues
+* [Gamepad Motion Helpers](https://github.com/JibbSmart/GamepadMotionHelpers) for
+  sensor fusion and calibration algorithms
+* [DirectX Shader Compiler](https://github.com/microsoft/DirectXShaderCompiler),
+  [zstd](https://github.com/facebook/zstd),
+  [nativefiledialog-extended](https://github.com/btzy/nativefiledialog-extended), and
+  [plume](https://github.com/renderbag/plume) via RT64
+* [splat](https://github.com/ethteck/splat) / spimdisasm for the disassembly that
+  produced this project's symbol metadata
+* [Inter](https://rsms.me/inter/), [Noto Emoji](https://fonts.google.com/noto), and
+  [PromptFont](https://shinmera.com/promptfont) fonts (OFL; PromptFont license in
+  `assets/promptfont/`)
+* [SDL_GameControllerDB](https://github.com/gabomdq/SDL_GameControllerDB) for
+  community controller mappings
+* [WCW vs. nWo World Tour: Recompiled](https://github.com/jessetbh/WCWvsNWOWorldTourRecomp),
+  [Bomberman Hero: Recompiled](https://github.com/RevoSucks/BMHeroRecomp), and
+  [Zelda64Recomp](https://github.com/Zelda64Recomp/Zelda64Recomp) as reference
+  projects for structure and conventions
+
+## Special Thanks
+
+* [Wiseguy](https://github.com/Mr-Wiseguy) and
+  [DarioSamo](https://github.com/DarioSamo) for creating N64Recomp and RT64.
+* [RevoSucks](https://github.com/RevoSucks) and the Bomberman Hero: Recompiled project,
+  the template for this port's sister project and therefore for this one.
+* The Zelda64Recomp team for establishing the conventions the whole recomp ecosystem
+  follows.
+* ethteck and the splat/spimdisasm contributors — the disassembly tooling that made a
+  no-decomp recompilation possible.
