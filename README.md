@@ -12,9 +12,10 @@ port from the zero-RENAMEs first-boot crash to a running game: **38 libultra
 functions named** (threads/mesg/events/VI/PI/SI/AI/SP-task/clock sets — full
 per-function evidence in `disasm/libultra.md`), overlays swap in correctly,
 graphics ucode identified as **F3DEX2.fifo 2.06** (RT64-handled), health
-telemetry shows `vis/s=30, ext=0, dpc+30/s` with zero crashes. Audio OSTask
-located by the runtime log: **ucode vram 0x8002BD10, data 0x8003A5C0, size
-0x1000** — RSPRecomp it next (WT's wcw_audio.toml as template).
+telemetry shows `vis/s=30, ext=0, dpc+30/s` with zero crashes. **Audio WORKS
+(same day):** the RSP audio ucode is recompiled (rsp/revenge_audio.toml) and
+the game's music/SFX render at full scale after fixing a mis-stubbed AL synth
+function (rsp/README.md has the story).
 No game assets are distributed; supply your own ROM (US release, SHA1
 `E1711A2511394B9357B5F1AC8CA5CC17BD674836`, big-endian, entrypoint `0x80000400`).
 
@@ -57,12 +58,15 @@ forks). `N64Recomp.exe`/`RSPRecomp.exe` + MinGW DLLs copied from the WT build
 
 ## Next steps (post-boot)
 
-1. **Audio voice path** (ucode DONE 2026-07-07 — recompiled from ROM 0x2C910,
-   executing ~43 tasks/s; see rsp/README.md): output is still silent because
-   the game-side voice renderer never feeds the RSP mixer (voice opcodes never
-   submitted; mixer input DRAM buffers permanently zero). Three concrete leads
-   logged in rsp/README.md (audio thread 0x80016EDC loop, double event-5
-   registration, rom_read streaming cap).
+1. ~~**Audio voice path**~~ **DONE 2026-07-07 — AUDIO WORKS** (music + SFX at
+   full scale). The silence was a mis-stubbed game function: `func_80018C24`,
+   the libultra AL synth event-post that every alSynStartVoice/SetVol/SetPitch/
+   StopVoice flows through, was in revenge.toml's bootstrap stub list (IDO
+   shared-tail split had made it look unrecompilable). One-line
+   symbol_addrs.txt size-extension + un-stub fixed it; full root-cause
+   narrative and the AL structure map in rsp/README.md. Lesson for the
+   remaining stubs review (step 4): a stub that "boots fine" can still be
+   load-bearing game code.
 2. **Verify visuals/input in-game** (attract intro cinematic renders correctly
    — WCW Monday Nitro stage, screenshot-verified; confirm title/menus and the
    keyboard/pad input path via the osContStartReadData shim).

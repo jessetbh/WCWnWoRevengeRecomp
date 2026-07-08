@@ -39,14 +39,19 @@ The loop tooling, if more identifications are needed:
    ext = undelivered-message backlog; ext growing with del/s=0 means a game
    thread is spinning without yielding).
 
-**Audio phase (2026-07-07): ucode recompiled and executing; output silent.**
+**Audio phase (2026-07-07): DONE — music + SFX render at full scale.**
 `rsp/revenge_audio.toml` → `rsp/revenge_audio.cpp`, wired for M_AUDTASK.
 NOT WT's aspMain — newer ucode, own dispatch table (see rsp/README.md for the
-12-bit-PC jump-table gotcha). Silence root-caused to the game-side voice
-renderer never producing input for the RSP mixer (evidence + 3 leads in
-rsp/README.md). Diagnostics: `WCW_AUDIO_LOG=1` enables the acmd dump/opcode
-histogram/DRAM-input probes in src/main/main.cpp and the [audio] peak line.
-Then: input verify, SaveType verify, stubs review.
+12-bit-PC jump-table gotcha). The silence was `func_80018C24` (libultra AL
+synth event post — ALL alSynStartVoice/SetVol/SetPitch/StopVoice calls route
+through it) sitting in revenge.toml's stub list from an IDO shared-tail
+mis-split; fixed by a symbol_addrs.txt size-extension to 0xA0 + un-stub
+(root cause + full AL structure map in rsp/README.md). Diagnostics:
+`WCW_AUDIO_LOG=1` enables the acmd dump/opcode histogram/[voice] pipeline
+probe in src/main/main.cpp and the [audio] peak line.
+Next: input verify, SaveType verify, stubs review — **treat every remaining
+stub as suspect game code, not settled OS asm; the audio bug proves a stub
+can boot clean and still kill a subsystem.**
 
 ## Hard-won facts (do not re-derive)
 

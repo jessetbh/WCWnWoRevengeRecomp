@@ -20,7 +20,6 @@
     "func_8002EC2C",
     "func_8002EC5C",
     "func_8002EC80",
-    "func_80018C24",
     "func_800264BC",
     "func_8002D500",
     "func_8002D510",

@@ -39,7 +39,10 @@ stubs = [
     "func_8002EC2C",
     "func_8002EC5C",
     "func_8002EC80",
-    "func_80018C24",
+    # func_80018C24 removed 2026-07-07: NOT unrecompilable asm — it is the AL synth
+    # event-post function (alSynStartVoice/SetVol/SetPitch/StopVoice all route
+    # through it); the stub was the silent-audio root cause. IDO shared-tail split
+    # (j into func_80018CAC) fixed by size-extending to 0xA0 in symbol_addrs.txt.
     "func_800264BC",
     "func_8002D500",
     "func_8002D510",

@@ -369,6 +369,30 @@ static RspExitReason revenge_audio_traced(uint8_t* rdram, uint32_t ucode_addr) {
         };
         fprintf(stderr, "| in104DB0=%08X in105850=%08X in106610=%08X\n",
             probe(0x80104DB0), probe(0x80105850), probe(0x80106610));
+        // Voice-pipeline stage probe (stage map from the 1050.s disasm; this is how
+        // the 2026-07-07 silent-audio bug was localized — see rsp/README.md):
+        // overlay -> func_8000E55C(track) -> func_8001381C (alloc voices, handle ctr
+        // D_800604E8) -> event queue (w=D_80060508 r=D_80060504) -> handler
+        // func_80014500 (client D_800604A0 on alGlobals D_80036F54) -> alSyn* ->
+        // func_80018C24 event post -> RSP voice opcodes. Game voices at D_800604D0
+        // (count D_800604C8, stride 0x158, active = voice+4 != 0). rdram u32 loads at
+        // 4-aligned offsets return the BE word's value, so halfwords live in the
+        // high/low 16 bits of their containing word.
+        auto w32 = [&](uint32_t addr) { return *(uint32_t*)(rdram + (addr - 0x80000000)); };
+        uint32_t vcnt = w32(0x800604C8), vbase = w32(0x800604D0);
+        uint32_t active = 0, flagged = 0;
+        if (vbase >= 0x80000000 && vcnt <= 64) {
+            for (uint32_t i = 0; i < vcnt; i++) {
+                if (w32(vbase + i * 0x158 + 0x4)) active++;
+                if (w32(vbase + i * 0x158) & 1) flagged++;
+            }
+        }
+        uint32_t alg = w32(0x80036F54);
+        uint32_t head = alg >= 0x80000000 ? w32(alg) : 0;
+        uint32_t handler = head >= 0x80000000 ? w32(head + 0x8) : 0;
+        fprintf(stderr, "[voice] qw=%u qr=%u handles=%u track=%u hmus=%08X voices=%u act=%u flag=%u alhead=%08X handler=%08X\n",
+            w32(0x80060508), w32(0x80060504), w32(0x800604E8),
+            w32(0x80036748) >> 16, w32(0x8002EED0), vcnt, active, flagged, head, handler);
     }
     return revenge_audio_ucode(rdram, ucode_addr);
 }

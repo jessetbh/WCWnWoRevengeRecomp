@@ -1,12 +1,15 @@
 # rsp/ — RSP microcode (Revenge)
 
+**Audio status: WORKING (2026-07-07)** — ucode recompiled and executing, and
+the game-side voice path fixed (stubbed `func_80018C24`, see RESOLVED below).
+
 ## Graphics ucode — handled by RT64 (do NOT recompile)
 RT64's GBI database matches Revenge's graphics ucode at runtime:
 **F3DEX2.fifo 2.06** (text vram `0x8002C970` → ROM `0x2D570`, data vram
 `0x8003A870` → ROM `0x3B470`). Newer than WT's F3DEX/F3DLX 1.23 pair, matched
 and rendering correctly (attract intro cinematic renders 2026-07-07).
 
-## Audio ucode — RECOMPILED AND EXECUTING (2026-07-07); output silent (see below)
+## Audio ucode — RECOMPILED AND EXECUTING (2026-07-07)
 `revenge_audio.toml` (text ROM `0x2C910`, size `0xC54`, text_address
 `0x04001080`) → `RSPRecomp` → `rsp/revenge_audio.cpp` (`revenge_audio_ucode`),
 compiled into `RevengeRecompiled` and returned by `get_rsp_microcode` for
@@ -27,40 +30,48 @@ Key differences from WT:
 Verified executing: `[wcw][sp] task totals` counts ~43 audio tasks/s alongside
 gfx tasks, no unhandled ops over multi-minute runs.
 
-## OPEN: audio output is silent (voice path never produces input) — 2026-07-07
-`WCW_AUDIO_LOG=1` shows a healthy pipeline (60 batches/s to SDL, stable buffer,
-game-set DAC rate 28800) but **peak=0 forever**, including minutes into the
-attract intro (which has music on hardware). Root-caused one level up with the
-acmd diagnostics in `src/main/main.cpp` (`revenge_audio_traced`, env
-`WCW_AUDIO_LOG=1`):
-- The game's command lists are real (~0x3D8–0x400 bytes, double-buffered at
-  0x80133AD0/0x8013BAD0) but contain ONLY the mixer/reverb set
-  (02 CLEARBUFF, 04 LOADBUFF, 06 SAVEBUFF, 0A DMEMMOVE, 0B LOADADPCM(0x20),
-  0C MIXER, 0D, 0E POLEF) recirculating DRAM delay-line buffers
-  (0x104DB0/0x105080/0x105850/0x105C10/0x106610…).
-- **Voice opcodes (01 ADPCM / 05 RESAMPLE / 08 SETBUFF / 09 SETVOL) are never
-  submitted** across ~14k tasks, and the mixer's LOADBUFF source buffers are
-  **permanently all-zero** (probed 1/s) → the CPU-side voice/music renderer
-  never writes its output. The RSP mixer faithfully mixes silence.
+## RESOLVED 2026-07-07: silent audio = stubbed AL event-post function
+`WCW_AUDIO_LOG=1` showed a healthy pipeline (60 batches/s, DAC 28800) but
+peak=0 forever: command lists carried ONLY the mixer/reverb set (02/04/06/0A/
+0B/0C/0D/0E recirculating delay lines); voice opcodes (01 ADPCM / 05 RESAMPLE /
+09 SETVOL) never appeared and the mixer's input DRAM stayed all-zero.
 
-Eliminated:
-- Ucode bugs (runs clean; mixes what it's given).
-- osSetTimer pacing (func_80026FA0 = osSetTimer confirmed, but its only caller
-  is inside runtime-provided osContInit — no game callers).
-- The audio-command handshake: overlay code sends to mq 0x800467C0 and BLOCKS
-  on an ack (0x800467E0) — the intro advances, so the handshake completes.
-  (NB: thread entry 0x80002CC4 pri 70 is a screen/fade manager — it calls
-  osViSetYScale/osViBlack — not the music engine.)
+**Root cause: `func_80018C24` — the libultra AL synthesizer's event-post
+function, through which EVERY voice operation flows (alSynStartVoice 0xE /
+StopVoice 0xF / SetPitch 0xB / SetVol 0xC posts onto the pvoice event list at
++0x7C, and the pri-4/9 transitions that set the pvoice render gate at +0x84) —
+was in revenge.toml's bootstrap stub list, recompiled as an empty body.** The
+game-side engine was fully alive (probed: music track started, ~20 voices
+active, all 24 pvoices allocated) but every alSyn* call silently no-oped, so
+the render gate never opened and `_pullSubFrame` emitted reverb only.
 
-Leads for the next session:
-1. Thread entry **0x80016EDC (pri 80)** is the audio-system thread (did the
-   osAiGetLength call; crashed on AI regs pre-shims via func_80017018). Its
-   loop needs disassembly: find the voice-render call and what gates it
-   (bank-loaded flag? sample-table pointer?).
-2. **Event 5 (SI) is registered twice** (`mq=0x80060428 msg=0x1` then
-   `mq=0x800482F0 msg=0x0` — second overwrites first in __osEventStateTab).
-   If the audio system owns the first registration and something steals it,
-   its DMA-completion/timing messages never arrive. Identify both registrants.
-3. Bump the `rom_read` log cap (pi.cpp, currently 30) to check whether the
-   music/sample streaming reads (0x200-byte chunks, rom ~0xE35000/0xCE9F00)
-   continue past boot or stall after the first buffer fill.
+Why it was stubbed: IDO shared-tail split — the function ends in
+`j func_80018CAC` (splat split the tail off as a phantom function), and the
+bootstrap loop stubbed it instead of merging. Fix (one line + regen):
+`disasm/symbol_addrs.txt` gets `func_80018C24 = 0x80018C24; // type:func
+size:0xA0` (absorbs the 0x18-byte tail; nothing jal's func_80018CAC), re-split,
+`gen_symbols.py`, remove the stub from revenge.toml, re-recompile. Verified:
+peak hits full scale (32767) with the intro music, voice opcodes stream in the
+acmd histogram, 90s run clean.
+
+The AL structure map that got there (all in 1050.s, offsets verified at
+runtime via the `[voice]` probe in src/main/main.cpp):
+- alGlobals ptr `D_80036F54` → struct at 0x8006E3E0. +0x0 client list head,
+  +0x4/0xC/0x14 pvoice free/alloc/lame lists, +0x1C frame sample clock,
+  +0x2C event free pool, +0x30 bus chain (render callbacks), +0x38 numPVoices
+  (24), +0x40 outputRate (28800).
+- `func_80017510`=alInit, `func_80017554`=alClose, `func_80017590`=
+  alSynAddPlayer, `func_800175E0`=alSynAllocVoice, `func_80017700`=pvoice grab,
+  `func_80017DB0`=alAudioFrame, `func_80017860/980/A30/AC0`=alSynSetVol/
+  SetPitch/StartVoice/StopVoice, `func_80017F18`=event alloc, `func_80018C24`=
+  event post (THE fix), `func_80018CC4`=pvoice render (gate +0x84==1).
+- Game layer: client `D_800604A0`, handler `func_80014500` (walks 24 voices
+  of 0x158 bytes at `D_800604D0`; ALVoices 0x1C apart at `D_800604CC`);
+  play-music facade `func_8000E55C(track)` (song table `D_80030D0C`, current
+  track `D_80036748`), `func_8001381C` = alloc-voices+start, event queue
+  w/r = `D_80060508/504`.
+
+NB the two unexplored leads from the hunt (double event-5 registration;
+rom_read streaming continuity) were NOT the cause — audio works with both
+untouched. The double SI registration may still be worth a look during the
+input-verification pass.
