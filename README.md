@@ -16,14 +16,12 @@ sharing its runtime stack and conventions.
 > saves persist automatically. See [Known Issues](#known-issues) for what's still
 > rough.
 
-<!-- TODO(release): capture and commit docs/screenshots/{gameplay,mode-select,title}.png
 <div align="center">
   <img src="docs/screenshots/gameplay.png" width="640" alt="In-ring gameplay rendered at high resolution">
   <br>
   <img src="docs/screenshots/title.png" width="318" alt="Title screen">
   <img src="docs/screenshots/mode-select.png" width="318" alt="Mode select menu">
 </div>
--->
 
 ## Table of Contents
 * [System Requirements](#system-requirements)
