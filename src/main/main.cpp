@@ -1,4 +1,4 @@
-﻿// Entry point for WCW/nWo Revenge: Recompiled.
+// Entry point for WCW/nWo Revenge: Recompiled.
 // Minimal launcher: sets up SDL + RT64 (via recompui) + the runtime callbacks, registers
 // the game, auto-loads the ROM (no UI launcher yet), and calls recomp::start.
 // Adapted from Bomberman Hero: Recompiled's src/main/main.cpp.
@@ -266,7 +266,7 @@ static bool reset_audio(uint32_t freq) {
     want.freq = (int)freq;
     want.format = AUDIO_S16SYS;
     want.channels = (Uint8)input_channels;
-    // 512-frame chunks (23ms @ 22050) â€” with 1024 (46ms) the device drained more per pull
+    // 512-frame chunks (23ms @ 22050) — with 1024 (46ms) the device drained more per pull
     // than the game's ~25ms audio bursts could cover, guaranteeing periodic underruns.
     want.samples = 512;
     want.callback = nullptr;
@@ -347,7 +347,7 @@ static RspExitReason revenge_audio_traced(uint8_t* rdram, uint32_t ucode_addr) {
             fprintf(stderr, "  %02X %06X %08X\n", w0 >> 24, w0 & 0xFFFFFF, w1);
         }
     }
-    // Opcode histogram across ALL audio tasks (printed every ~256 tasks â‰ˆ 6s):
+    // Opcode histogram across ALL audio tasks (printed every ~256 tasks ≈ 6s):
     // discriminates "voice opcodes never submitted" (game-side silence) from
     // "voice opcodes mis-executed" (ucode bug).
     static uint32_t histo[16] = {};
@@ -370,7 +370,7 @@ static RspExitReason revenge_audio_traced(uint8_t* rdram, uint32_t ucode_addr) {
         fprintf(stderr, "| in104DB0=%08X in105850=%08X in106610=%08X\n",
             probe(0x80104DB0), probe(0x80105850), probe(0x80106610));
         // Voice-pipeline stage probe (stage map from the 1050.s disasm; this is how
-        // the 2026-07-07 silent-audio bug was localized â€” see rsp/README.md):
+        // the 2026-07-07 silent-audio bug was localized — see rsp/README.md):
         // overlay -> func_8000E55C(track) -> func_8001381C (alloc voices, handle ctr
         // D_800604E8) -> event queue (w=D_80060508 r=D_80060504) -> handler
         // func_80014500 (client D_800604A0 on alGlobals D_80036F54) -> alSyn* ->
@@ -404,9 +404,9 @@ RspUcodeFunc* get_rsp_microcode(const OSTask* task) {
             (unsigned)task->t.type, (unsigned)task->t.ucode, (unsigned)task->t.ucode_data,
             (unsigned)task->t.ucode_size);
     }
-    // Only non-gfx tasks reach here â€” gfx tasks go through the renderer path.
+    // Only non-gfx tasks reach here — gfx tasks go through the renderer path.
     if (task->t.type == M_AUDTASK) {
-        // Diagnostic (env WCW_AUDIO_LOG=1, first 8 tasks): acmd list location/size â€”
+        // Diagnostic (env WCW_AUDIO_LOG=1, first 8 tasks): acmd list location/size —
         // discriminates "game submits empty lists" from "ucode output wrong".
         static const bool audio_log = getenv("WCW_AUDIO_LOG") != nullptr;
         static int an = 0;
@@ -422,7 +422,7 @@ RspUcodeFunc* get_rsp_microcode(const OSTask* task) {
         }
         return &revenge_audio_ucode;
     }
-    fprintf(stderr, "[rsp] unknown task type=%u â€” running no-op ucode\n", (unsigned)task->t.type);
+    fprintf(stderr, "[rsp] unknown task type=%u — running no-op ucode\n", (unsigned)task->t.type);
     return &wcw_null_ucode;
 }
 
@@ -484,7 +484,7 @@ int main(int argc, char** argv) {
     (void)show_console;
 
     // Program identity. The program id names the config/save folder
-    // (%LOCALAPPDATA%\RevengeRecompiled on Windows) â€” keep it matched to the exe name.
+    // (%LOCALAPPDATA%\RevengeRecompiled on Windows) — keep it matched to the exe name.
     // Set before anything that resolves the app folder (logging below, config path later).
     recompui::programconfig::set_program_name("WCW/nWo Revenge: Recompiled");
     recompui::programconfig::set_program_id(u8"RevengeRecompiled");
@@ -577,11 +577,11 @@ int main(int argc, char** argv) {
     game.mod_game_id = "wcwnworevenge";
     game.thumbnail_bytes = std::span<const char>(icon_bytes);
     // Sram = a 32 KB save buffer. VERIFIED 2026-07-07: Revenge (unlike World Tour) saves
-    // to CART SRAM â€” func_80000A40 is its osSramInit (PI handle base 0xA8000000, device
+    // to CART SRAM — func_80000A40 is its osSramInit (PI handle base 0xA8000000, device
     // type 3), and librecomp routes the resulting osEPiStartDma traffic at phys
     // >= 0x08000000 into this buffer (saves/<game id>.bin). Save carries AKI's repeated
     // "19 97 10 21" magic; a no-input boot validates and preserves it byte-for-byte.
-    // NB si.cpp's Controller Pak emulation shares this same buffer (WT's medium) â€” fine
+    // NB si.cpp's Controller Pak emulation shares this same buffer (WT's medium) — fine
     // as long as Revenge never issues joybus pak transactions (it has no pak support).
     game.save_type = recomp::SaveType::Sram;
     game.is_enabled = true;
@@ -595,7 +595,7 @@ int main(int argc, char** argv) {
     recomp::register_game(supported_games[0]);
 
     // Config/saves/stored-ROM location: %LOCALAPPDATA%\WCWRecompiled (or next to the exe
-    // if a portable.txt file exists in the working dir â€” handled by get_app_folder_path).
+    // if a portable.txt file exists in the working dir — handled by get_app_folder_path).
     // librecomp doesn't create the folder itself, and select_rom's stored-ROM write plus
     // the json config writes all assume it exists.
     std::filesystem::path app_folder = recompui::file::get_app_folder_path();
@@ -620,7 +620,7 @@ int main(int argc, char** argv) {
     recompinput::players::set_player_count_range(1, 4);
 
     // WCW-specific default bindings (must run before the config tabs load / any profile is
-    // created â€” recompinput forbids changing defaults after first use). WCW's in-ring scheme
+    // created — recompinput forbids changing defaults after first use). WCW's in-ring scheme
     // (manual): D-PAD moves, ANALOG STICK taunts, L = duck/dodge, R = block/guard, C-Down =
     // run, C-Up = climb/flip, C-Left/Right = switch focus, Z = unused. The generic recomp
     // defaults fit badly (movement not on left stick; duck on LB while block is on RT).
@@ -649,7 +649,7 @@ int main(int argc, char** argv) {
         recompinput::set_default_mapping_for_controller(GameInput::C_LEFT,     { pad_digital(SDL_CONTROLLER_BUTTON_LEFTSHOULDER) });
         recompinput::set_default_mapping_for_controller(GameInput::C_RIGHT,    { pad_digital(SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) });
 
-        // Keyboard: same semantics â€” WASD = move (d-pad), IJKL = taunt (analog stick).
+        // Keyboard: same semantics — WASD = move (d-pad), IJKL = taunt (analog stick).
         // The generic default had these reversed for WCW (WASD was the stick = taunt).
         recompinput::set_default_mapping_for_keyboard(GameInput::DPAD_LEFT,  { InputField::keyboard(SDL_SCANCODE_A) });
         recompinput::set_default_mapping_for_keyboard(GameInput::DPAD_RIGHT, { InputField::keyboard(SDL_SCANCODE_D) });
@@ -668,7 +668,7 @@ int main(int argc, char** argv) {
     recompui::config::GeneralTabOptions general_options{};
     // Rumble works: the game's raw-SI Rumble Pak probe/motor commands are handled by the
     // hybrid pak emulation in librecomp si.cpp (answer the title-screen "Insert a Rumble Pak
-    // now" prompt to enable it in-game). The slider must be on â€” recompinput::update_rumble
+    // now" prompt to enable it in-game). The slider must be on — recompinput::update_rumble
     // is a no-op when has_rumble_strength is false.
     general_options.has_rumble_strength = true;
     recompui::config::create_general_tab(general_options);
@@ -677,7 +677,7 @@ int main(int argc, char** argv) {
     recompui::config::create_sound_tab();
     recompui::config::finalize();
 
-    // ROM intake. Default: the recompui launcher menu â€” first run shows "Load ROM" (nfd
+    // ROM intake. Default: the recompui launcher menu — first run shows "Load ROM" (nfd
     // file dialog, validated against the registered hash, then stored/remembered in the
     // config path); later runs show "Start Game" (librecomp's check_all_stored_roms, run
     // inside recomp::start, revalidates the stored copy). WCW_AUTOBOOT=<path|1> bypasses
@@ -719,7 +719,7 @@ int main(int argc, char** argv) {
             try {
                 // Console presentation mode, NOT PresentEarly (which BMHero uses). PresentEarly
                 // fires a present the moment a workload writes any previously-displayed
-                // framebuffer â€” correct for one-gfx-task-per-frame games, but WCW builds each
+                // framebuffer — correct for one-gfx-task-per-frame games, but WCW builds each
                 // frame from MULTIPLE tasks and the last task of a frame PRE-CLEARS the next
                 // buffer (fbPair1). PresentEarly presented that freshly-cleared buffer -> one
                 // pure black frame per game frame (verified by swapchain readback: a steady
