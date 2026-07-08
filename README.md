@@ -20,7 +20,7 @@ sharing its runtime stack and conventions.
   <img src="docs/screenshots/gameplay.png" width="640" alt="In-ring gameplay rendered at high resolution">
   <br>
   <img src="docs/screenshots/title.png" width="318" alt="Title screen">
-  <img src="docs/screenshots/mode-select.png" width="318" alt="Mode select menu">
+  <img src="docs/screenshots/wrestler-select.png" width="318" alt="Wrestler select">
 </div>
 
 ## Table of Contents
