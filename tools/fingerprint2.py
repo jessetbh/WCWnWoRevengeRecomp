@@ -6,11 +6,18 @@ L2: keep opcode+rs+rt+rd skeleton, keep branch displacements and hardware-segmen
     lui values (0xA0xx-0xBFxx — MMIO anchors), mask all other immediates.
 L3: opcode skeleton only (op field; for SPECIAL also funct), branches keep offsets.
 A function 'matches' at the loosest level that yields exactly one hit."""
-import re, struct
+import os, re, struct
 
-WT_ROM  = r"C:\Users\selki\depot\WcwNwoWorldTour\wcw.z64"
-REV_ROM = r"C:\Users\selki\depot\WcwRevengeRecomp\revenge.z64"
-WT_TOML = r"C:\Users\selki\depot\WcwNwoWorldTour\WCWSyms\dump.toml"
+# Resolve ROMs/symbols relative to this script (workspace root = ../..) so no
+# absolute machine paths live in git; sibling repos sit alongside this one.
+_WS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+def _sib(*parts):
+    return os.path.join(_WS, *parts)
+
+WT_ROM  = _sib("WcwNwoWorldTour", "wcw.z64")
+REV_ROM = _sib("WcwRevengeRecomp", "revenge.z64")
+WT_TOML = _sib("WcwNwoWorldTour", "WCWSyms", "dump.toml")
 REV_CODE_START, REV_CODE_END = 0x1000, 0xD8000
 
 BRANCH_OPS = {0x01, 0x04, 0x05, 0x06, 0x07, 0x14, 0x15, 0x16, 0x17}

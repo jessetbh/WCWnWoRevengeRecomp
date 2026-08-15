@@ -8,12 +8,19 @@
 3. Unrecompilable-opcode scan — functions containing mfc0/mtc0/eret/tlb/cache ops
    (N64Recomp can't emit these) need stubbing/naming regardless of identity; find
    them directly."""
-import re, struct
+import os, re, struct
+
+# Resolve ROMs/symbols relative to this script (workspace root = ../..) so no
+# absolute machine paths live in git; sibling repos sit alongside this one.
+_WS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+def _sib(*parts):
+    return os.path.join(_WS, *parts)
 from collections import Counter
 
-WT_ROM  = r"C:\Users\selki\depot\WcwNwoWorldTour\wcw.z64"
-REV_ROM = r"C:\Users\selki\depot\WcwRevengeRecomp\revenge.z64"
-WT_TOML = r"C:\Users\selki\depot\WcwNwoWorldTour\WCWSyms\dump.toml"
+WT_ROM  = _sib("WcwNwoWorldTour", "wcw.z64")
+REV_ROM = _sib("WcwRevengeRecomp", "revenge.z64")
+WT_TOML = _sib("WcwNwoWorldTour", "WCWSyms", "dump.toml")
 REV_CODE_START, REV_CODE_END = 0x1000, 0xD8000
 REV_MAIN_VRAM = 0x80000400   # entrypoint; assume rom 0x1000 <-> this vram like WT
 

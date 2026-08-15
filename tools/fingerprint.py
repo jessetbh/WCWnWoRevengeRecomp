@@ -8,11 +8,18 @@ the whole Revenge code region, then find the masked needle in the masked haystac
 Branch offsets, register allocation, and struct/stack offsets are kept, so a match
 is the same compiled function modulo link addresses. Unique matches bootstrap
 Revenge's RENAME map without redoing the libultra identification."""
-import re, struct, sys
+import os, re, struct, sys
 
-WT_ROM  = r"C:\Users\selki\depot\WcwNwoWorldTour\wcw.z64"
-REV_ROM = r"C:\Users\selki\depot\WcwRevengeRecomp\revenge.z64"
-WT_TOML = r"C:\Users\selki\depot\WcwNwoWorldTour\WCWSyms\dump.toml"
+# Resolve ROMs/symbols relative to this script (workspace root = ../..) so no
+# absolute machine paths live in git; sibling repos sit alongside this one.
+_WS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+def _sib(*parts):
+    return os.path.join(_WS, *parts)
+
+WT_ROM  = _sib("WcwNwoWorldTour", "wcw.z64")
+REV_ROM = _sib("WcwRevengeRecomp", "revenge.z64")
+WT_TOML = _sib("WcwNwoWorldTour", "WCWSyms", "dump.toml")
 
 REV_CODE_START, REV_CODE_END = 0x1000, 0xD8000   # from tools/recon.py
 

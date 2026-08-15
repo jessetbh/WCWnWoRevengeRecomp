@@ -3,10 +3,17 @@
 (docs/devlog.md there): jr-$ra density to find code regions, plus a direct
 similarity comparison against the World Tour ROM to measure shared code.
 """
-import sys, struct
+import os, sys, struct
 
-REV = r"C:\Users\selki\depot\WcwRevengeRecomp\revenge.z64"
-WT  = r"C:\Users\selki\depot\WcwNwoWorldTour\wcw.z64"
+# Resolve ROMs relative to this script (workspace root = ../..) so no absolute
+# machine paths live in git; sibling repos sit alongside this one.
+_WS = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+def _sib(*parts):
+    return os.path.join(_WS, *parts)
+
+REV = _sib("WcwRevengeRecomp", "revenge.z64")
+WT  = _sib("WcwNwoWorldTour", "wcw.z64")
 
 rev = open(REV, "rb").read()
 wt  = open(WT, "rb").read()

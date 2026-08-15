@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Classify code vs data across the Revenge main segment at 256-byte granularity
 using rabbitizer instruction validity, then emit splat subsegment boundaries."""
-import struct, sys
-sys.path.insert(0, r"C:\Users\selki\depot\WcwRevengeRecomp\disasm\.venv\Lib\site-packages")
+import os, struct, sys
+
+# Resolve paths relative to this script (repo root = ..) so no absolute
+# machine paths live in git.
+_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.insert(0, os.path.join(_ROOT, "disasm", ".venv", "Lib", "site-packages"))
 import rabbitizer
 
-rev = open(r"C:\Users\selki\depot\WcwRevengeRecomp\revenge.z64", "rb").read()
+rev = open(os.path.join(_ROOT, "revenge.z64"), "rb").read()
 START, END = 0x1050, 0xD8000
 WIN = 0x100
 
