@@ -490,6 +490,11 @@ int main(int argc, char** argv) {
     // Set before anything that resolves the app folder (logging below, config path later).
     recompui::programconfig::set_program_name("WCW/nWo Revenge: Recompiled");
     recompui::programconfig::set_program_id(u8"RevengeRecompiled");
+    // [wcw hfr] 60fps frame interpolation: the camera multiply is inline per object, so RT64 derives object matrices itself.
+    recompui::programconfig::FrameInterpolation frame_interpolation{};
+    frame_interpolation.smooth_rate = 60;
+    frame_interpolation.hookless_objects = true;
+    recompui::programconfig::set_frame_interpolation(frame_interpolation);
 
 #ifdef _WIN32
     wcw_setup_logging(show_console);
