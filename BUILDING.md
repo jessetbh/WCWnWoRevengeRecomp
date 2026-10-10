@@ -137,6 +137,11 @@ as `type:func size:` hints — use `rom:` attributes for overlay functions, sinc
 both overlays share vram `0x80090000`. `tools/recomp-loop3.py` automates the
 common treatments.
 
+After recompiling, run `python tools\fix_jraddend.py` (repairs jump tables whose
+index N64Recomp const-folded to 0; ported from No Mercy, where it made championship
+wins record as losses; the current output has no such sites, so it guards future
+regenerations) and `python tools\readd_hand_edits.py` (ray tracing camera hand-off).
+
 ## 8. Changing anything under `lib/`
 
 `lib/` submodules are jessetbh forks carrying the `[wcw fix]` set on `wcw`
