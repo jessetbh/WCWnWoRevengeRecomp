@@ -656,6 +656,8 @@ int main(int argc, char** argv) {
     recompui::programconfig::FrameInterpolation frame_interpolation{};
     frame_interpolation.smooth_rate = 60;
     frame_interpolation.hookless_objects = true;
+    // Each buffer is cleared at the end of the previous frame, so generated frames start from the game's buffer.
+    frame_interpolation.prime_generated_frames = true;
     recompui::programconfig::set_frame_interpolation(frame_interpolation);
 
 #ifdef _WIN32
