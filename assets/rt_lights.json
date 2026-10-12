@@ -95,9 +95,21 @@
             "glows": [[0, 450, 1250, 2.6, 1000, 1.0, 0.9, 0.7], [-280, 150, 1100, 1.5, 600, 1.0, 0.85, 0.55]]
         },
         {
+            // Halloween Havoc: darker arena (0.65). Entrance set: the purple WCW mask with red eyes and a pumpkin; purple
+            // glow from the mask, a flickering orange pumpkin.
             "name": "Halloween Havoc",
             "match": ["805D999742A5C991", "5402CE8EC49564C0", "7DBE14E77CF7A651", "FB09B3CECFF17B99", "C1C0DC2AAE7840DE",
-                      "EF8BEAF161FBC0BA", "10BF635EFC04B118", "2F8A9C7A6C3FFCE4", "2A48F4CF2F4C8B9C", "5C060545FD4E6A5E"]
+                      "EF8BEAF161FBC0BA", "10BF635EFC04B118", "2F8A9C7A6C3FFCE4", "2A48F4CF2F4C8B9C", "5C060545FD4E6A5E"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.9, 0.9, 1.0],
+            "outsideDarkness": 0.65,
+            "outsideEdge": 350,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[0, 350, 1250, 2.6, 900, 0.6, 0.3, 1.0], [-260, 380, 1250, 2.0, 600, 1.0, 0.45, 0.08, 0.2], [0, 80, 1000, 1.2, 600, 0.6, 0.3, 1.0]]
         },
         {
             "name": "Starrcade",
