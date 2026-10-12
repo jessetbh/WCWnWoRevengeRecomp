@@ -78,9 +78,21 @@
             "glows": [[-200, 300, 1150, 2.2, 650, 1.0, 0.35, 0.75], [200, 300, 1150, 2.2, 650, 1.0, 0.35, 0.75], [0, 60, 1000, 1.6, 700, 1.0, 0.15, 0.2]]
         },
         {
+            // Bash at the Beach: daytime beach set (sky backdrop, hut, palms, boardwalk). Warm sunlight from the set
+            // side, the arena dimmed less.
             "name": "Bash at the Beach",
             "match": ["44F956B41362E793", "A2CB535B0906B9A5", "6B37FEB99B3F3086", "606AEEC1ECDD1E50", "1605632CD7368C5F",
-                      "304A48A7BA4B3F66", "35368FC53F2B661A", "209ACD666CE13A80"]
+                      "304A48A7BA4B3F66", "35368FC53F2B661A", "209ACD666CE13A80"],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "lights": [[0, 900, 300, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "color": [1.0, 0.95, 0.84],
+            "outsideDarkness": 0.35,
+            "outsideEdge": 500,
+            "litAreas": [[0, 1150, 500, 400]],
+            "glows": [[0, 450, 1250, 2.6, 1000, 1.0, 0.9, 0.7], [-280, 150, 1100, 1.5, 600, 1.0, 0.85, 0.55]]
         },
         {
             "name": "Halloween Havoc",
