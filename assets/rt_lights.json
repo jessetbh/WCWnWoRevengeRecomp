@@ -61,9 +61,21 @@
             "glows": [[0, 300, 1200, 2.6, 900, 1.0, 0.5, 0.15], [-300, 200, 1150, 1.8, 600, 1.0, 0.6, 0.2], [300, 200, 1150, 1.8, 600, 1.0, 0.6, 0.2]]
         },
         {
+            // SuperBrawl: cool truss rig. Red carpet entrance under the SUPERBRAWL VIII sign, pink spot lamps on the two
+            // posts: magenta post glows and a red carpet glow.
             "name": "SuperBrawl",
             "match": ["3CCD14D834391523", "AE0854CE0C4521D9", "A616640604307741", "88751ADE0CAE421D", "BDC991F317F40F30",
-                      "C4F0979C45FD8C5E"]
+                      "C4F0979C45FD8C5E"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.96, 0.95, 1.0],
+            "outsideDarkness": 0.5,
+            "outsideEdge": 400,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[-200, 300, 1150, 2.2, 650, 1.0, 0.35, 0.75], [200, 300, 1150, 2.2, 650, 1.0, 0.35, 0.75], [0, 60, 1000, 1.6, 700, 1.0, 0.15, 0.2]]
         },
         {
             "name": "Bash at the Beach",
