@@ -29,9 +29,21 @@
     },
     "venues": [
         {
+            // Monday Nitro: lighting truss over the ring (key + four corner lamps), cool white TV light. Entrance set: the
+            // NITRO truss towers with their lamp columns, lit white-blue from below.
             "name": "Monday Nitro",
             "match": ["B4C3EA2B6D9BF85A", "E62A39C4471BAABC", "B6BADC4C236BCED2", "2989980CD6228384", "3C3062B600F7DEC9",
-                      "C38AF6CBE3570E88", "CD8AD5593A3032FC", "6BDA6D8D26543C7B", "4D8B39AED43B3F52"]
+                      "C38AF6CBE3570E88", "CD8AD5593A3032FC", "6BDA6D8D26543C7B", "4D8B39AED43B3F52"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.94, 0.96, 1.0],
+            "outsideDarkness": 0.5,
+            "outsideEdge": 400,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[-230, 250, 1150, 2.2, 650, 0.8, 0.88, 1.0], [230, 250, 1150, 2.2, 650, 0.8, 0.88, 1.0], [0, 80, 950, 1.2, 600, 0.9, 0.9, 1.0]]
         },
         {
             "name": "Souled Out",
