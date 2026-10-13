@@ -1,0 +1,131 @@
+{
+    // Ray tracing light presets (read by RT64's WcwRaytracer; reloaded when this file changes).
+    // "default" applies to any venue not matched below. A venue is recognized by its "match" list of world texture
+    // hashes (WCW_RT_VENUE_LOG=1 prints the current scene's candidates; the Lighting editor's "New venue from scene"
+    // writes one).
+    // Fields: center [x, y, z] (receiver center on X/Z, key light height on Y), spread, fills, keyWeight, size (light
+    // panel width), radius (shadow receiver radius), shadow, characterShadow, clearance, falloff, anchor ("scene":
+    // offsets from the drawn scene's center and floor), or "lights": [[x, y, z, weight], ...] to place up to 8 lights
+    // explicitly (these cast the shadows).
+    // Colored light: "color" [r, g, b] tints every light (white = none; normalized, so brightness stays the same),
+    // "keyColor" / "fillColor" for the generated rig, [x, y, z, weight, r, g, b] for one light.
+    // Glows: [[x, y, z, intensity, range(, r, g, b(, flicker))], ...] (up to 4) add light in all directions, also
+    // outside the radius; they light traced geometry (floor, ramp, sets), never crowd sprites or screens. The color is
+    // not normalized (it scales the glow); flicker 0..1 = a failing tube that blinks off now and then.
+    // "outsideDarkness" (0..1) darkens everything beyond the receiver radius (crowd, arena, wrestlers out there), easing
+    // in over "outsideEdge"; "litAreas" [[x, z, radius, edge], ...] (up to 2) are places with their own light that stay
+    // out of that darkness.
+    //
+    // WCW/nWo Revenge (rigged 2026-10-12 with the AkiMods quickmatch mod + free camera): six arenas, each with its
+    // entrance set at +Z (towers, banners, logos) in the same scene. The entrance walk-out is a separate close-up scene
+    // with no set geometry of its own (only ring and wrestler textures), so it keeps the built-in default rig.
+    "default": {
+        "center": [0, 650, 0],
+        "lights": [[0, 650, 0, 2], [-320, 600, -320, 1], [320, 600, -320, 1], [-320, 600, 320, 1], [320, 600, 320, 1]],
+        "size": 20,
+        "radius": 650,
+        "shadow": 0.6,
+        "characterShadow": 0.35
+    },
+    "venues": [
+        {
+            // Monday Nitro: lighting truss over the ring (key + four corner lamps), cool white TV light. Entrance set: the
+            // NITRO truss towers with their lamp columns, lit white-blue from below.
+            "name": "Monday Nitro",
+            "match": ["B4C3EA2B6D9BF85A", "E62A39C4471BAABC", "B6BADC4C236BCED2", "2989980CD6228384", "3C3062B600F7DEC9",
+                      "C38AF6CBE3570E88", "CD8AD5593A3032FC", "6BDA6D8D26543C7B", "4D8B39AED43B3F52"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.94, 0.96, 1.0],
+            "outsideDarkness": 0.5,
+            "outsideEdge": 400,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[-230, 250, 1150, 2.2, 650, 0.8, 0.88, 1.0], [230, 250, 1150, 2.2, 650, 0.8, 0.88, 1.0], [0, 80, 950, 1.2, 600, 0.9, 0.9, 1.0]]
+        },
+        {
+            // Souled Out: warm truss rig. The entrance wall of fiery SOULED OUT screens washes the ramp orange.
+            "name": "Souled Out",
+            "match": ["609AD335B59C4854", "7FB4B696C5022E88", "23ECEAA725C708DB", "D8AC42775B894A11", "BD233DBA9D30A855"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [1.0, 0.94, 0.84],
+            "outsideDarkness": 0.5,
+            "outsideEdge": 400,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[0, 300, 1200, 2.6, 900, 1.0, 0.5, 0.15], [-300, 200, 1150, 1.8, 600, 1.0, 0.6, 0.2], [300, 200, 1150, 1.8, 600, 1.0, 0.6, 0.2]]
+        },
+        {
+            // SuperBrawl: cool truss rig. Red carpet entrance under the SUPERBRAWL VIII sign, pink spot lamps on the two
+            // posts: magenta post glows and a red carpet glow.
+            "name": "SuperBrawl",
+            "match": ["3CCD14D834391523", "AE0854CE0C4521D9", "A616640604307741", "88751ADE0CAE421D", "BDC991F317F40F30",
+                      "C4F0979C45FD8C5E"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.96, 0.95, 1.0],
+            "outsideDarkness": 0.5,
+            "outsideEdge": 400,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[-200, 300, 1150, 2.2, 650, 1.0, 0.35, 0.75], [200, 300, 1150, 2.2, 650, 1.0, 0.35, 0.75], [0, 60, 1000, 1.6, 700, 1.0, 0.15, 0.2]]
+        },
+        {
+            // Bash at the Beach: daytime beach set (sky backdrop, hut, palms, boardwalk). Warm sunlight from the set
+            // side, the arena dimmed less.
+            "name": "Bash at the Beach",
+            "match": ["44F956B41362E793", "A2CB535B0906B9A5", "6B37FEB99B3F3086", "606AEEC1ECDD1E50", "1605632CD7368C5F",
+                      "304A48A7BA4B3F66", "35368FC53F2B661A", "209ACD666CE13A80"],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "lights": [[0, 900, 300, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "color": [1.0, 0.95, 0.84],
+            "outsideDarkness": 0.35,
+            "outsideEdge": 500,
+            "litAreas": [[0, 1150, 500, 400]],
+            "glows": [[0, 450, 1250, 2.6, 1000, 1.0, 0.9, 0.7], [-280, 150, 1100, 1.5, 600, 1.0, 0.85, 0.55]]
+        },
+        {
+            // Halloween Havoc: darker arena (0.65). Entrance set: the purple WCW mask with red eyes and a pumpkin; purple
+            // glow from the mask, a flickering orange pumpkin.
+            "name": "Halloween Havoc",
+            "match": ["805D999742A5C991", "5402CE8EC49564C0", "7DBE14E77CF7A651", "FB09B3CECFF17B99", "C1C0DC2AAE7840DE",
+                      "EF8BEAF161FBC0BA", "10BF635EFC04B118", "2F8A9C7A6C3FFCE4", "2A48F4CF2F4C8B9C", "5C060545FD4E6A5E"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.9, 0.9, 1.0],
+            "outsideDarkness": 0.65,
+            "outsideEdge": 350,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[0, 350, 1250, 2.6, 900, 0.6, 0.3, 1.0], [-260, 380, 1250, 2.0, 600, 1.0, 0.45, 0.08, 0.2], [0, 80, 1000, 1.2, 600, 0.6, 0.3, 1.0]]
+        },
+        {
+            // Starrcade: cool truss rig. Blue columned arch with the STARRCADE logo and white star lamps: blue logo glow,
+            // white lamps at the columns.
+            "name": "Starrcade",
+            "match": ["B72DD63F44380FC8", "B525632D6263D7B5", "39A6A0F68F761C7B", "009382707DF0DED6", "26C863D2A93FF2F9"],
+            "lights": [[0, 900, 0, 3], [-300, 850, -300, 1], [300, 850, -300, 1], [-300, 850, 300, 1], [300, 850, 300, 1]],
+            "size": 25,
+            "radius": 600,
+            "shadow": 0.65,
+            "characterShadow": 0.4,
+            "color": [0.9, 0.94, 1.0],
+            "outsideDarkness": 0.55,
+            "outsideEdge": 400,
+            "litAreas": [[0, 1150, 450, 350]],
+            "glows": [[0, 250, 1250, 2.6, 900, 0.35, 0.5, 1.0], [-260, 200, 1150, 1.8, 600, 0.85, 0.9, 1.0], [260, 200, 1150, 1.8, 600, 0.85, 0.9, 1.0]]
+        }
+    ]
+}
