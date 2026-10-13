@@ -1,0 +1,19 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "WCW/nWo Revenge",
+  "project": "WCW/nWo Revenge: Recompiled",
+  "system": "N64",
+  "type": "recomp",
+  "status": "released",
+  "targets": [
+    "Windows"
+  ],
+  "toolchain": [
+    "N64Recomp",
+    "RT64"
+  ],
+  "original": {
+    "region": "USA",
+    "sha1": "e1711a2511394b9357b5f1ac8ca5cc17bd674836"
+  }
+}
