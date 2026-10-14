@@ -59,5 +59,56 @@ def rt_hand_edits():
     return 'rt camera hand-off: ' + '; '.join(done)
 
 
+# [wcw fix] Widescreen cull (aki-roadmap#47 / #5). func_80002110 builds the visible-object lists of the
+# layer passes and drops an object when |x| / (depth + 150) > 1.5 or |y| / (depth + 150) > 1.5
+# (view space; the AKI engine's per-object cull, the same as No Mercy's func_800024F8). That is about
+# 3.8x the 4:3 screen edge, but with Aspect Ratio = Expand RT64 shows a wider view, and large set pieces
+# whose center is past the line while their geometry reaches into the extra width were culled at the
+# screen edges (edge pop-in). Scale only the horizontal limit by the screen's widening
+# (wcw_widescreen_cull_scale, src/game/recomp_api.cpp: 1 at Original). The projection is untouched
+# (RT64's Expand widens it). Never hook func_80002110 from a mod: a hooked function is recompiled from the
+# ROM without this edit.
+WCW_CULL_FUNC = 'func_80002110'
+WCW_CULL_X_LOAD = '    ctx->f12.u32l = MEM_W(ctx->r16, 0X18);'
+WCW_CULL_COMPARE = '    c1cs = ctx->f22.d < ctx->f0.d;'
+WCW_CULL_EDIT = [
+    '    /* [wcw fix] widescreen cull: the horizontal limit follows the screen width (aki-roadmap#47). */\n',
+    '    c1cs = (ctx->f22.d * wcw_widescreen_cull_scale()) < ctx->f0.d;\n',
+]
+WCW_CULL_DECLS = [
+    '/* [wcw fix] widescreen cull scale, implemented in src/game/recomp_api.cpp. */\n',
+    'extern double wcw_widescreen_cull_scale(void);\n',
+]
+
+def widescreen_cull_edit():
+    """Replace the cull's horizontal compare (the first after the x load) in place. Fails loudly if the
+    generated code changed shape."""
+    import glob, os as _os, sys as _sys
+    funcs = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'RecompiledFuncs')
+    sig = 'RECOMP_FUNC void %s(' % WCW_CULL_FUNC
+    for path in sorted(glob.glob(_os.path.join(funcs, 'funcs_*.c'))):
+        with open(path, 'rb') as f:
+            lines = f.read().decode('utf-8', errors='replace').splitlines(keepends=True)
+        start = next((i for i, l in enumerate(lines) if l.startswith(sig)), None)
+        if start is None:
+            continue
+        if any('wcw_widescreen_cull_scale' in l for l in lines):
+            return 'widescreen cull (already present)'
+        end = next(i for i in range(start, len(lines)) if lines[i].rstrip('\r\n') == ';}')
+        loads = [i for i in range(start, end) if lines[i].rstrip('\r\n') == WCW_CULL_X_LOAD]
+        compares = [i for i in range(loads[0], end) if lines[i].rstrip('\r\n') == WCW_CULL_COMPARE] if len(loads) == 1 else []
+        if len(loads) != 1 or len(compares) != 2:
+            _sys.exit('widescreen cull: %s changed shape (%d x loads, %d compares); re-derive the edit'
+                      % (WCW_CULL_FUNC, len(loads), len(compares)))
+        lines[compares[0]:compares[0] + 1] = WCW_CULL_EDIT
+        last_include = max((i for i, l in enumerate(lines) if l.startswith('#include')), default=-1)
+        lines[last_include + 1:last_include + 1] = WCW_CULL_DECLS
+        with open(path, 'wb') as f:
+            f.write(''.join(lines).encode('utf-8'))
+        return 'widescreen cull -> %s %s' % (_os.path.basename(path), WCW_CULL_FUNC)
+    _sys.exit('widescreen cull: %s not found in RecompiledFuncs' % WCW_CULL_FUNC)
+
+
 if __name__ == '__main__':
     print('readd_hand_edits: ' + rt_hand_edits())
+    print('readd_hand_edits: ' + widescreen_cull_edit())
