@@ -46,3 +46,24 @@ extern "C" void recomp_get_target_aspect_ratio(uint8_t* rdram, recomp_context* c
     }
     _return(ctx, original);
 }
+
+// [wcw fix] Widescreen cull (aki-roadmap#47 / #5), called from the hand-edited func_80002110
+// (tools/readd_hand_edits.py). The game drops an object when its center is past
+// |x| / (depth + 150) > 1.5 in view space, about 3.8x the 4:3 screen edge. In Expand the screen
+// is wider, so large set pieces whose center is past that line but which reach into the extra
+// width vanished at the edges. The horizontal limit is scaled by how much wider than 4:3 the
+// screen is, keeping the game's own margin; 1 at Original, so 4:3 is unchanged.
+extern "C" double wcw_widescreen_cull_scale() {
+    const ultramodern::renderer::GraphicsConfig& config = ultramodern::renderer::get_graphics_config();
+    if (config.ar_option != ultramodern::renderer::AspectRatio::Expand) {
+        return 1.0;
+    }
+
+    int width = 0, height = 0;
+    recompui::get_window_size(width, height);
+    if (width <= 0 || height <= 0) {
+        return 1.0;
+    }
+
+    return std::max(1.0, (static_cast<double>(width) / height) / (4.0 / 3.0));
+}
